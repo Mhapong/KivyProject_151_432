@@ -11,7 +11,7 @@ from kivy.properties import NumericProperty, BooleanProperty
 # 🏆 Level Data (Background images for each level)
 level_data = {
     1: {"bg_image": "map_1.jpg"},
-    2: {"bg_image": "map_3.jpg"},
+    2: {"bg_image": "map_1.jpg"},
     3: {"bg_image": "map_3.jpg"},
 }
 
@@ -50,6 +50,17 @@ class GameScreen(Screen):
         self.player = Player(source="cube_85.png", size_hint=(None, None), size=(50, 50), pos=(100, 100))
         self.add_widget(self.player)
 
+        # Back to Level Select Button (Now Visible)
+        self.back_button = Button(
+            text="Back",
+            size_hint=(None, None),
+            size=(120, 50),
+            pos_hint={"right": 0.98, "top": 0.98},
+            background_color=(1, 0, 0, 1)
+        )
+        self.back_button.bind(on_press=self.go_back)
+        self.add_widget(self.back_button)
+
         # Update Game
         Clock.schedule_interval(self.update, 1/60)
         Window.bind(on_key_down=self.on_key_down)
@@ -60,6 +71,9 @@ class GameScreen(Screen):
     
     def update(self, dt):
         self.player.update()
+
+    def go_back(self, instance):
+        self.manager.current = "level_select"
 
 # 🏁 Level Selection Screen
 class LevelSelectScreen(Screen):
@@ -84,10 +98,23 @@ class LevelSelectScreen(Screen):
             btn.bind(on_press=lambda instance, lvl=i: self.start_game(lvl))
             self.add_widget(btn)
 
+        # Back to Menu Button
+        back_button = Button(
+            text="Back",
+            size_hint=(None, None),
+            size=(150, 50),
+            pos_hint={"right": 0.98, "top": 0.98}
+        )
+        back_button.bind(on_press=self.go_to_menu)
+        self.add_widget(back_button)
+
     def start_game(self, level):
         game_screen = GameScreen(name=f"game{level}", level=level)
         self.manager.add_widget(game_screen)
         self.manager.current = f"game{level}"
+
+    def go_to_menu(self, instance):
+        self.manager.current = "menu"
 
 # 🏠 Main Menu Screen
 class MenuScreen(Screen):
