@@ -44,17 +44,18 @@ class GameScreen(Screen):
 
         # Background
         self.bg = Image(source=level_data[self.level]["bg_image"], allow_stretch=True, keep_ratio=False)
+        self.bg.size = Window.size  # Stretch background to fit window size
         self.add_widget(self.bg)
 
-        # Player
-        self.player = Player(source="cube_85.png", size_hint=(None, None), size=(50, 50), pos=(100, 100))
+        # Player (Upscaled size)
+        self.player = Player(source="cube_85.png", size_hint=(None, None), size=(100, 100), pos=(200, 200))
         self.add_widget(self.player)
 
-        # Back to Level Select Button (Now Visible)
+        # Back to Level Select Button (Now Visible and Larger)
         self.back_button = Button(
             text="Back",
             size_hint=(None, None),
-            size=(120, 50),
+            size=(200, 80),  # Increased size
             pos_hint={"right": 0.98, "top": 0.98},
             background_color=(1, 0, 0, 1)
         )
@@ -75,34 +76,34 @@ class GameScreen(Screen):
     def go_back(self, instance):
         self.manager.current = "level_select"
 
-# 🏁 Level Selection Screen
+# 🏁 Level Selection Screen (Larger Buttons)
 class LevelSelectScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         title = Label(
             text="Select Level",
-            font_size="40sp",
+            font_size="60sp",  # Larger font size
             bold=True,
             color=(1, 1, 1, 1),
             size_hint=(None, None),
-            size=(400, 100),
+            size=(600, 150),
             pos_hint={"center_x": 0.5, "top": 1}
         )
         self.add_widget(title)
 
-        # Buttons for Level Selection
+        # Buttons for Level Selection (Larger)
         for i in range(1, 4):  
-            btn = Button(text=f"Level {i}", size_hint=(None, None), size=(200, 60))
-            btn.pos_hint = {"center_x": 0.5, "center_y": 0.6 - (i * 0.15)}
+            btn = Button(text=f"Level {i}", size_hint=(None, None), size=(300, 120))  # Larger buttons
+            btn.pos_hint = {"center_x": 0.5, "center_y": 0.6 - (i * 0.2)}
             btn.bind(on_press=lambda instance, lvl=i: self.start_game(lvl))
             self.add_widget(btn)
 
-        # Back to Menu Button
+        # Back to Menu Button (Larger)
         back_button = Button(
             text="Back",
             size_hint=(None, None),
-            size=(150, 50),
+            size=(200, 80),
             pos_hint={"right": 0.98, "top": 0.98}
         )
         back_button.bind(on_press=self.go_to_menu)
@@ -116,28 +117,28 @@ class LevelSelectScreen(Screen):
     def go_to_menu(self, instance):
         self.manager.current = "menu"
 
-# 🏠 Main Menu Screen
+# 🏠 Main Menu Screen (Larger Font and Buttons)
 class MenuScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
         title = Label(
             text="Geometry Dash Clone",
-            font_size="40sp",
+            font_size="60sp",  # Larger font size
             bold=True,
             color=(1, 1, 1, 1),
             size_hint=(None, None),
-            size=(400, 100),
+            size=(600, 150),
             pos_hint={"center_x": 0.5, "top": 1}
         )
         self.add_widget(title)
 
-        # Play Button
+        # Play Button (Larger)
         play_button = Button(
             text="Play",
-            font_size="24sp",
+            font_size="36sp",  # Larger font size
             size_hint=(None, None),
-            size=(200, 60),
+            size=(300, 120),
             background_color=(0.2, 0.6, 1, 1),
             color=(1, 1, 1, 1)
         )
@@ -151,6 +152,7 @@ class MenuScreen(Screen):
 # 🚀 Main App
 class GeometryDashApp(App):
     def build(self):
+        Window.size = (1200, 800)  # Upscaled window size
         sm = ScreenManager()
         sm.add_widget(MenuScreen(name="menu"))
         sm.add_widget(LevelSelectScreen(name="level_select"))
