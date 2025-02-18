@@ -1,20 +1,21 @@
 from kivy.app import App
-from kivy.uix.widget import Widget
+from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.image import Image
+from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
-from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.properties import NumericProperty, BooleanProperty
 
-# ตัวละครผู้เล่น
-
+# 🏆 Level Data (Background images for each level)
 level_data = {
     1: {"bg_image": "map_1.jpg"},
     2: {"bg_image": "map_3.jpg"},
     3: {"bg_image": "map_3.jpg"},
 }
+
+# 🎮 Player Class
 class Player(Image):
     velocity = NumericProperty(0)
     gravity = -0.5
@@ -35,25 +36,24 @@ class Player(Image):
             self.velocity = 0
             self.on_ground = True
 
-# หน้าจอเกม (ใช้สำหรับทุกด่าน)
+# 🎯 Game Screen (Changes Background per Level)
 class GameScreen(Screen):
-    def __init__(self, level, **kwargs):
+    def __init__(self, level=1, **kwargs):
         super().__init__(**kwargs)
-        self.level = level  # เก็บหมายเลขด่าน
-        self.player = Player(source='cube_85.png', size_hint=(None, None), size=(50, 50), pos=(100, 100))
+        self.level = level
+
+        # Background
+        self.bg = Image(source=level_data[self.level]["bg_image"], allow_stretch=True, keep_ratio=False)
+        self.add_widget(self.bg)
+
+        # Player
+        self.player = Player(source="cube_85.png", size_hint=(None, None), size=(50, 50), pos=(100, 100))
         self.add_widget(self.player)
+
+        # Update Game
         Clock.schedule_interval(self.update, 1/60)
         Window.bind(on_key_down=self.on_key_down)
 
-        # แสดงชื่อด่านที่มุมบนซ้าย
-        level_label = Label(text=f"Level {self.level}", font_size="24sp", size_hint=(None, None), pos=(20, Window.height - 50))
-        self.add_widget(level_label)
-
-        # ปุ่มกลับไปที่หน้าจอเลือกด่าน
-        back_button = Button(text="Back", size_hint=(None, None), size=(100, 50), pos=(20, 20))
-        back_button.bind(on_press=self.back_to_levels)
-        self.add_widget(back_button)
-    
     def on_key_down(self, instance, key, *args):
         if key == 32:  # Spacebar
             self.player.jump()
@@ -61,91 +61,72 @@ class GameScreen(Screen):
     def update(self, dt):
         self.player.update()
 
-    def back_to_levels(self, instance):
-        self.manager.current = "level_select"
-
-# หน้าจอเลือกด่าน
+# 🏁 Level Selection Screen
 class LevelSelectScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        
+
         title = Label(
             text="Select Level",
             font_size="40sp",
+            bold=True,
+            color=(1, 1, 1, 1),
             size_hint=(None, None),
             size=(400, 100),
             pos_hint={"center_x": 0.5, "top": 1}
         )
         self.add_widget(title)
-        
-        # ปุ่มเลือกด่าน
-        levels = 3  # กำหนดจำนวนด่าน
-        for i in range(1, levels + 1):
-            btn = Button(
-                text=f"Level {i}",
-                font_size="24sp",
-                size_hint=(None, None),
-                size=(200, 60),
-                pos_hint={"center_x": 0.5, "center_y": 0.6 - (i * 0.15)}
-            )
-            btn.bind(on_press=self.start_level)
-            btn.level = i  # กำหนดหมายเลขด่านให้ปุ่ม
+
+        # Buttons for Level Selection
+        for i in range(1, 4):  
+            btn = Button(text=f"Level {i}", size_hint=(None, None), size=(200, 60))
+            btn.pos_hint = {"center_x": 0.5, "center_y": 0.6 - (i * 0.15)}
+            btn.bind(on_press=lambda instance, lvl=i: self.start_game(lvl))
             self.add_widget(btn)
-        
-        # ปุ่มกลับไปเมนู
-        back_button = Button(text="Back to Menu", size_hint=(None, None), size=(200, 50), pos_hint={"center_x": 0.5, "center_y": 0.1})
-        back_button.bind(on_press=self.back_to_menu)
-        self.add_widget(back_button)
 
-    def start_level(self, instance):
-        level = instance.level  # ดึงหมายเลขด่าน
-        self.manager.get_screen(f"game{level}").player.pos = (100, 100)  # รีเซ็ตตำแหน่งตัวละคร
-        self.manager.current = f"game{level}"  # เปลี่ยนไปหน้าด่านที่เลือก
+    def start_game(self, level):
+        game_screen = GameScreen(name=f"game{level}", level=level)
+        self.manager.add_widget(game_screen)
+        self.manager.current = f"game{level}"
 
-    def back_to_menu(self, instance):
-        self.manager.current = "menu"
-
-# หน้าเมนูหลัก
+# 🏠 Main Menu Screen
 class MenuScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
         title = Label(
-            text="Geometry at Home",
+            text="Geometry Dash Clone",
             font_size="40sp",
             bold=True,
+            color=(1, 1, 1, 1),
             size_hint=(None, None),
             size=(400, 100),
             pos_hint={"center_x": 0.5, "top": 1}
         )
         self.add_widget(title)
-        
+
+        # Play Button
         play_button = Button(
             text="Play",
             font_size="24sp",
             size_hint=(None, None),
             size=(200, 60),
             background_color=(0.2, 0.6, 1, 1),
-            color=(1, 1, 1, 1),
-            pos_hint={"center_x": 0.5, "center_y": 0.4}
+            color=(1, 1, 1, 1)
         )
-        play_button.bind(on_press=self.start_game)
+        play_button.pos_hint = {"center_x": 0.5, "center_y": 0.4}
+        play_button.bind(on_press=self.go_to_level_select)
         self.add_widget(play_button)
-    def start_game(self, instance):
-        self.manager.current = "level_select"
-    
 
-# แอปหลัก
+    def go_to_level_select(self, instance):
+        self.manager.current = "level_select"
+
+# 🚀 Main App
 class GeometryDashApp(App):
     def build(self):
         sm = ScreenManager()
         sm.add_widget(MenuScreen(name="menu"))
         sm.add_widget(LevelSelectScreen(name="level_select"))
-
-        # เพิ่มด่านหลายด่าน
-        for i in range(1, 4):  # ด่าน 1-3
-            sm.add_widget(GameScreen(name=f"game{i}", level=i))
-
         return sm
 
 if __name__ == '__main__':
