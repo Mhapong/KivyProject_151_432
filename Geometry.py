@@ -9,6 +9,12 @@ from kivy.core.window import Window
 from kivy.properties import NumericProperty, BooleanProperty
 
 # ตัวละครผู้เล่น
+
+level_data = {
+    1: {"bg_image": "map_1.jpg"},
+    2: {"bg_image": "map_3.jpg"},
+    3: {"bg_image": "map_3.jpg"},
+}
 class Player(Image):
     velocity = NumericProperty(0)
     gravity = -0.5
