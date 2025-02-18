@@ -126,8 +126,7 @@ class MenuScreen(Screen):
         play_button.bind(on_press=self.start_game)
         self.add_widget(play_button)
     
-    def start_game(self, instance):
-        self.manager.current = "level_select"
+    
 
 # แอปหลัก
 class GeometryDashApp(App):
