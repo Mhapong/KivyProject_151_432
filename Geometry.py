@@ -18,7 +18,7 @@ class Player(Image):
             self.velocity = self.jump_strength
             self.on_ground = False
 
-    def update(self, platforms):
+    def update(self, platforms, obstacles):
         self.velocity += self.gravity
         self.y += self.velocity
         
@@ -31,12 +31,21 @@ class Player(Image):
         else:
             self.on_ground = False
         
+        for obstacle in obstacles:
+            if self.collide_widget(obstacle):
+                print("Game Over!")
+                App.get_running_app().stop()
+                break
+        
         if self.y <= 0:
             self.y = 0
             self.velocity = 0
             self.on_ground = True
 
 class Platform(Image):
+    pass
+
+class Obstacle(Image):
     pass
 
 class GameScreen(Screen):
@@ -52,6 +61,13 @@ class GameScreen(Screen):
         for platform in self.platforms:
             self.add_widget(platform)
 
+        self.obstacles = [
+            Obstacle(source='spike.png', size_hint=(None, None), size=(50, 50), pos=(200, 70)),
+            Obstacle(source='spike.png', size_hint=(None, None), size=(50, 50), pos=(400, 170)),
+        ]
+        for obstacle in self.obstacles:
+            self.add_widget(obstacle)
+
         Clock.schedule_interval(self.update, 1/60)
         Window.bind(on_key_down=self.on_key_down)
     
@@ -60,7 +76,7 @@ class GameScreen(Screen):
             self.player.jump()
     
     def update(self, dt):
-        self.player.update(self.platforms)
+        self.player.update(self.platforms, self.obstacles)
 
 class GeometryDashApp(App):
     def build(self):
