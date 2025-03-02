@@ -1,11 +1,15 @@
 from kivy.app import App
+from kivy.lang import Builder
 from kivy.uix.widget import Widget
 from kivy.uix.image import Image
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.properties import NumericProperty, BooleanProperty
-from kivy.uix.relativelayout import RelativeLayout
+from kivy.factory import Factory
+
+# 🔹 โหลดไฟล์ game.kv
+Builder.load_file('game.kv')
 
 class Player(Image):
     velocity = NumericProperty(0)
@@ -51,26 +55,13 @@ class Obstacle(Image):
 class GameScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.player = Player(source='cube_85.png', size_hint=(None, None), size=(50, 50), pos=(100, 100))
-        self.add_widget(self.player)
-
-        self.platforms = [
-            Platform(source='platform.png', size_hint=(None, None), size=(200, 20), pos=(50, 50)),
-            Platform(source='platform.png', size_hint=(None, None), size=(200, 20), pos=(300, 150)),
-        ]
-        for platform in self.platforms:
-            self.add_widget(platform)
-
-        self.obstacles = [
-            Obstacle(source='spike.png', size_hint=(None, None), size=(50, 50), pos=(200, 70)),
-            Obstacle(source='spike.png', size_hint=(None, None), size=(50, 50), pos=(400, 170)),
-        ]
-        for obstacle in self.obstacles:
-            self.add_widget(obstacle)
+        self.player = self.ids.player
+        self.platforms = [self.ids.platform1, self.ids.platform2]
+        self.obstacles = [self.ids.obstacle1, self.ids.obstacle2]
 
         Clock.schedule_interval(self.update, 1/60)
         Window.bind(on_key_down=self.on_key_down)
-    
+
     def on_key_down(self, instance, key, *args):
         if key == 32:  # Spacebar
             self.player.jump()

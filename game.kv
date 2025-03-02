@@ -1,0 +1,43 @@
+# game.kv
+<GameScreen>:
+    Player:
+        id: player
+        source: 'cube_85.png'
+        size_hint: None, None
+        size: 50, 50
+        pos: 100, 100
+
+    Platform:
+        id: platform1
+        source: 'platform.png'
+        size_hint: None, None
+        size: 200, 20
+        pos: 50, 50
+
+    Platform:
+        id: platform2
+        source: 'platform.png'
+        size_hint: None, None
+        size: 200, 20
+        pos: 300, 150
+
+    Obstacle:
+        id: obstacle1
+        source: 'spike.png'
+        size_hint: None, None
+        size: 50, 50
+        pos: 200, 70
+
+    Obstacle:
+        id: obstacle2
+        source: 'spike.png'
+        size_hint: None, None
+        size: 50, 50
+        pos: 400, 170
+<Platform@Image>:
+    size_hint: None, None
+    size: 200, 20
+
+<Obstacle@Image>:
+    size_hint: None, None
+    size: 50, 50
