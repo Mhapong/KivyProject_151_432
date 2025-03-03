@@ -13,10 +13,11 @@ Builder.load_file('game.kv')
 
 class Player(Image):
     velocity = NumericProperty(0)
+    x_velocity = NumericProperty(2)  # ✅ ความเร็วแนวราบ (ค่า 2 หมายถึงไปข้างหน้า)
     gravity = -0.5
-    jump_strength = 10
+    jump_strength = 15  
     on_ground = BooleanProperty(True)
-    
+
     def jump(self):
         if self.on_ground:
             self.velocity = self.jump_strength
@@ -25,7 +26,9 @@ class Player(Image):
     def update(self, platforms, obstacles):
         self.velocity += self.gravity
         self.y += self.velocity
-        
+        self.x += self.x_velocity  # ✅ เคลื่อนที่ไปข้างหน้า
+
+        # ตรวจสอบการชนกับ platform
         for platform in platforms:
             if self.collide_widget(platform) and self.velocity <= 0:
                 self.y = platform.y + platform.height
@@ -34,17 +37,20 @@ class Player(Image):
                 break
         else:
             self.on_ground = False
-        
+
+        # ตรวจสอบการชนกับ obstacle (Game Over)
         for obstacle in obstacles:
             if self.collide_widget(obstacle):
-                print("Game Over!")
+                print("Game Over!")  
                 App.get_running_app().stop()
                 break
-        
+
+        # ป้องกันตัวละครตกจากขอบล่าง
         if self.y <= 0:
             self.y = 0
             self.velocity = 0
             self.on_ground = True
+
 
 class Platform(Image):
     pass
