@@ -27,7 +27,7 @@ class GameScreen(Screen):
         Window.unbind(on_key_down=self.on_key_down)
 
     def update(self, dt):
-        self.ids.player.update([self.ids.ground], [])
+        self.ids.player.update([self.ids.ground1, self.ids.ground2])
 
     def on_key_down(self, window, key, *args):
         if key == 32:  # 32 is the keycode for the spacebar
@@ -45,7 +45,7 @@ class Player(Image):
             self.velocity = self.jump_strength
             self.on_ground = False
 
-    def update(self, platforms, obstacles):
+    def update(self, platforms):
         self.velocity += self.gravity
         self.y += self.velocity
 
@@ -54,8 +54,8 @@ class Player(Image):
             platform.x -= self.x_velocity
 
             # Reset platform position to create infinite map illusion
-            if platform.right < 0:
-                platform.x = Window.width
+            if platform.right <= 0:
+                platform.x = platform.width
 
         # ตรวจสอบการชนกับ platform
         for platform in platforms:

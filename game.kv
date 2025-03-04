@@ -13,11 +13,18 @@
             size_hint: None, None
             size: 50, 50
             center_x: self.parent.width / 2
-            y: 100
+            y: 150  # Adjust the player's initial y position if needed
 
         Platform:
-            id: ground
+            id: ground1
             source: 'assets/platform.png'
             size_hint: None, None
             size: root.width, 20
-            pos: 0, 0
+            pos: 0, 100  # Set the ground higher
+
+        Platform:
+            id: ground2
+            source: 'assets/platform.png'
+            size_hint: None, None
+            size: root.width, 20
+            pos: root.width, 100  # Set the ground higher and to the right of the first ground
