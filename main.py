@@ -1,6 +1,7 @@
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.image import Image
+from kivy.uix.widget import Widget
 from kivy.properties import NumericProperty, BooleanProperty
 from kivy.lang import Builder
 
@@ -12,7 +13,8 @@ class StageSelectionScreen(Screen):
     pass
 
 class GameScreen(Screen):
-    pass
+    def set_background(self, background_image):
+        self.ids.background.source = background_image
 
 class Player(Image):
     velocity = NumericProperty(0)
@@ -40,6 +42,9 @@ class Player(Image):
                 break
         else:
             self.on_ground = False
+
+class Platform(Image):
+    pass
 
 class MyApp(App):
     def build(self):
