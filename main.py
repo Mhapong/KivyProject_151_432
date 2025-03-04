@@ -35,9 +35,9 @@ class GameScreen(Screen):
 
 class Player(Image):
     velocity = NumericProperty(0)
-    x_velocity = NumericProperty(2)  # ✅ ความเร็วแนวราบ (ค่า 2 หมายถึงไปข้างหน้า)
+    x_velocity = NumericProperty(4)  # Increase horizontal speed
     gravity = -0.5
-    jump_strength = 15  
+    jump_strength = 10  # Reduce jump height
     on_ground = BooleanProperty(True)
 
     def jump(self):
