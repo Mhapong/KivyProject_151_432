@@ -1,3 +1,4 @@
+import random
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.image import Image
@@ -21,17 +22,24 @@ class GameScreen(Screen):
     def on_enter(self):
         Clock.schedule_interval(self.update, 1.0 / 60.0)
         Window.bind(on_key_down=self.on_key_down)
+        self.spawn_spike()
 
     def on_leave(self):
         Clock.unschedule(self.update)
         Window.unbind(on_key_down=self.on_key_down)
 
     def update(self, dt):
-        self.ids.player.update([self.ids.ground1, self.ids.ground2])
+        self.ids.player.update([self.ids.ground1, self.ids.ground2], [self.ids.spike])
 
     def on_key_down(self, window, key, *args):
         if key == 32:  # 32 is the keycode for the spacebar
             self.ids.player.jump()
+
+    def spawn_spike(self, dt=None):
+        # Randomly decide whether to spawn a spike based on the level
+        if random.random() < 0.1:  # Adjust the probability based on the level
+            self.ids.spike.x = Window.width
+        Clock.schedule_once(self.spawn_spike, random.uniform(1, 3))  # Adjust the spawn rate based on the level
 
 class Player(Image):
     velocity = NumericProperty(0)
@@ -45,7 +53,7 @@ class Player(Image):
             self.velocity = self.jump_strength
             self.on_ground = False
 
-    def update(self, platforms):
+    def update(self, platforms, obstacles):
         self.velocity += self.gravity
         self.y += self.velocity
 
@@ -57,6 +65,14 @@ class Player(Image):
             if platform.right <= 0:
                 platform.x = platform.width
 
+        # Move obstacles to create the illusion of movement
+        for obstacle in obstacles:
+            obstacle.x -= self.x_velocity
+
+            # Reset obstacle position if it moves off-screen
+            if obstacle.right <= 0:
+                obstacle.x = Window.width
+
         # ตรวจสอบการชนกับ platform
         for platform in platforms:
             if self.collide_widget(platform) and self.velocity <= 0:
@@ -67,7 +83,16 @@ class Player(Image):
         else:
             self.on_ground = False
 
+        # ตรวจสอบการชนกับ obstacle
+        for obstacle in obstacles:
+            if self.collide_widget(obstacle):
+                # Handle collision with spike (e.g., end game, reduce health, etc.)
+                print("Collision with spike!")
+
 class Platform(Image):
+    pass
+
+class Spike(Widget):
     pass
 
 class MyApp(App):

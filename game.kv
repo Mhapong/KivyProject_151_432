@@ -28,3 +28,14 @@
             size_hint: None, None
             size: root.width, 20
             pos: root.width, 100  # Set the ground higher and to the right of the first ground
+
+        Spike:
+            id: spike
+            size_hint: None, None
+            size: 20, 20
+            pos: root.width, 120  # Initial position off-screen
+            canvas.before:
+                Color:
+                    rgba: 1, 0, 0, 1  # Red color for the spike
+                Triangle:
+                    points: [self.x, self.y, self.x + self.width / 2, self.y + self.height, self.x + self.width, self.y]
