@@ -12,18 +12,12 @@
             source: 'assets/cube_85.png'
             size_hint: None, None
             size: 50, 50
-            pos: 100, 100
+            center_x: self.parent.width / 2
+            y: 100
 
         Platform:
-            id: platform1
+            id: ground
             source: 'assets/platform.png'
             size_hint: None, None
-            size: 500, 20
-            pos: 50, 50
-
-        Platform:
-            id: platform2
-            source: 'assets/platform.png'
-            size_hint: None, None
-            size: 200, 20
-            pos: 300, 150
+            size: root.width, 20
+            pos: 0, 0
