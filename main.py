@@ -41,6 +41,10 @@ class GameScreen(Screen):
             self.ids.spike.x = Window.width
         Clock.schedule_once(self.spawn_spike, random.uniform(1, 3))  # Adjust the spawn rate based on the level
 
+    def game_over(self):
+        print("Game Over!")
+        self.manager.current = 'stage_selection'
+
 class Player(Image):
     velocity = NumericProperty(0)
     x_velocity = NumericProperty(4)  # Increase horizontal speed
@@ -87,7 +91,7 @@ class Player(Image):
         for obstacle in obstacles:
             if self.collide_widget(obstacle):
                 # Handle collision with spike (e.g., end game, reduce health, etc.)
-                print("Collision with spike!")
+                App.get_running_app().root.get_screen('game').game_over()
 
 class Platform(Image):
     pass
