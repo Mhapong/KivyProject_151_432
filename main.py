@@ -49,8 +49,9 @@ class Player(Image):
     velocity = NumericProperty(0)
     x_velocity = NumericProperty(4)  # Increase horizontal speed
     gravity = -0.5
-    jump_strength = 10  # Reduce jump height
+    jump_strength = 12  # Reduce jump height
     on_ground = BooleanProperty(True)
+    rotation = NumericProperty(0)  # Add rotation property
 
     def jump(self):
         if self.on_ground:
@@ -60,6 +61,10 @@ class Player(Image):
     def update(self, platforms, obstacles):
         self.velocity += self.gravity
         self.y += self.velocity
+
+        # Continuously rotate while in the air
+        if not self.on_ground:
+            self.rotation += 2  # Adjust the rotation speed to be slower
 
         # Move platforms to create the illusion of movement
         for platform in platforms:
@@ -83,6 +88,7 @@ class Player(Image):
                 self.y = platform.y + platform.height
                 self.velocity = 0
                 self.on_ground = True
+                self.rotation = 0  # Reset rotation when on ground
                 break
         else:
             self.on_ground = False

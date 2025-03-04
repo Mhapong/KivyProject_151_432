@@ -14,6 +14,13 @@
             size: 50, 50
             center_x: self.parent.width / 2
             y: 150  # Adjust the player's initial y position if needed
+            canvas.before:
+                PushMatrix
+                Rotate:
+                    angle: - self.rotation
+                    origin: self.center
+            canvas.after:
+                PopMatrix
 
         Platform:
             id: ground1
@@ -32,10 +39,10 @@
         Spike:
             id: spike
             size_hint: None, None
-            size: 30,45
+            size: 35 , 40
             pos: root.width, 120  # Initial position off-screen
             canvas.before:
                 Color:
-                    rgba: 1, 0, 0, 1  # Red color for the spike
+                    rgba: 1, 1, 1, 1  # Red color for the spike
                 Triangle:
                     points: [self.x, self.y, self.x + self.width / 2, self.y + self.height, self.x + self.width, self.y]
