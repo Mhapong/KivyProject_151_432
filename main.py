@@ -29,12 +29,18 @@ class GameScreen(Screen):
         self.spawn_spike()
         self.create_hole()
 
+        # Create Finish Line
+        self.finish_line = FinishLine()
+        self.finish_line.x = Window.width + 800  # Adjust the distance further out
+        self.finish_line.y = self.ids.ground1.top
+        self.add_widget(self.finish_line)
+
     def on_leave(self):
         Clock.unschedule(self.update)
         Window.unbind(on_key_down=self.on_key_down)
 
     def update(self, dt):
-        self.ids.player.update([self.ids.ground1, self.ids.ground2], [self.ids.spike])
+        self.ids.player.update([self.ids.ground1, self.ids.ground2], [self.ids.spike], self.finish_line)
 
     def on_key_down(self, window, key, *args):
         if key == 32:  # 32 is the keycode for the spacebar
@@ -77,9 +83,35 @@ class GameScreen(Screen):
         quit_button.bind(on_release=lambda *args: self.quit_game())
 
         popup.open()
-
+        
     def reset_game(self, popup):
         popup.dismiss()
+        self.manager.current = 'stage_selection'
+        
+    def level_complete(self):
+        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        layout.add_widget(Label(text='You Win! 🎉'))
+
+        button_layout = BoxLayout(orientation='horizontal', spacing=10)
+        next_button = Button(text='Next Level')
+        menu_button = Button(text='Main Menu')
+
+        button_layout.add_widget(next_button)
+        button_layout.add_widget(menu_button)
+        layout.add_widget(button_layout)
+
+        popup = Popup(title='Level Complete!', content=layout, size_hint=(0.5, 0.5), auto_dismiss=False)
+
+        next_button.bind(on_release=lambda *args: self.next_level(popup))
+        menu_button.bind(on_release=lambda *args: self.go_to_menu())
+
+        popup.open()
+
+    def next_level(self, popup):
+        popup.dismiss()
+        self.reset_game()
+
+    def go_to_menu(self):
         self.manager.current = 'stage_selection'
 
     def quit_game(self):
@@ -98,7 +130,7 @@ class Player(Image):
             self.velocity = self.jump_strength
             self.on_ground = False
 
-    def update(self, platforms, obstacles):
+    def update(self, platforms, obstacles,finish_line):
         self.velocity += self.gravity
         self.y += self.velocity
 
@@ -142,6 +174,12 @@ class Player(Image):
         # Check if player falls into a hole
         if self.y < 0:
             App.get_running_app().root.get_screen('game').game_over()
+            
+        if self.collide_widget(finish_line):
+            App.get_running_app().root.get_screen('game').level_complete()
+
+class FinishLine(Image):
+    pass
 
 class Platform(Image):
     pass
