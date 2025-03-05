@@ -11,6 +11,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
+from kivy.animation import Animation
 
 # Load the KV files
 Builder.load_file('stage_selection.kv')
@@ -83,11 +84,32 @@ class GameScreen(Screen):
         quit_button.bind(on_release=lambda *args: self.quit_game())
 
         popup.open()
-        
+
     def reset_game(self, popup):
         popup.dismiss()
-        self.manager.current = 'stage_selection'
-        
+
+        # Reset player position and properties
+        self.ids.player.pos = (100, Window.height // 2)  # Set initial position of player
+        self.ids.player.velocity = 0
+        self.ids.player.on_ground = True
+        self.ids.player.rotation = 0
+
+        # Reset the platforms and obstacles
+        self.ids.ground1.x = 0
+        self.ids.ground2.x = self.ids.ground1.right
+        self.ids.spike.x = Window.width + 100  # Reset spike position to off-screen
+
+        # Recreate the finish line at its starting position
+        self.finish_line.x = Window.width + 800  # Adjust to your preferred starting position
+        self.finish_line.y = self.ids.ground1.top
+
+        # Restart the spawn of spikes and holes
+        self.spawn_spike()
+        self.create_hole()
+
+        # Set the game state to active again
+        Clock.schedule_interval(self.update, 1.0 / 60.0)  # Restart the game loop
+
     def level_complete(self):
         layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
         layout.add_widget(Label(text='You Win! 🎉'))
@@ -130,7 +152,7 @@ class Player(Image):
             self.velocity = self.jump_strength
             self.on_ground = False
 
-    def update(self, platforms, obstacles,finish_line):
+    def update(self, platforms, obstacles, finish_line):
         self.velocity += self.gravity
         self.y += self.velocity
 
@@ -165,18 +187,29 @@ class Player(Image):
         else:
             self.on_ground = False
 
-        # Check for collision with obstacles
+        # Check for collision with obstacles (for death effect)
         for obstacle in obstacles:
             if self.collide_widget(obstacle):
                 # Handle collision with spike (e.g., end game, reduce health, etc.)
-                App.get_running_app().root.get_screen('game').game_over()
+                self.trigger_death_effect()
 
         # Check if player falls into a hole
         if self.y < 0:
-            App.get_running_app().root.get_screen('game').game_over()
-            
+            self.trigger_death_effect()
+
         if self.collide_widget(finish_line):
             App.get_running_app().root.get_screen('game').level_complete()
+
+    def trigger_death_effect(self):
+        # Trigger death animation for player
+        death_animation = Animation(size=(0, 0), rotation=720, duration=1)
+        death_animation.bind(on_complete=self.on_death_complete)
+        death_animation.start(self)
+
+    def on_death_complete(self, *args):
+        # After the animation ends, trigger game over
+        App.get_running_app().root.get_screen('game').game_over()
+
 
 class FinishLine(Image):
     pass
