@@ -7,6 +7,10 @@ from kivy.properties import NumericProperty, BooleanProperty
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.core.window import Window
+from kivy.uix.popup import Popup
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.uix.label import Label
 
 # Load the KV files
 Builder.load_file('stage_selection.kv')
@@ -23,6 +27,7 @@ class GameScreen(Screen):
         Clock.schedule_interval(self.update, 1.0 / 60.0)
         Window.bind(on_key_down=self.on_key_down)
         self.spawn_spike()
+        self.create_hole()
 
     def on_leave(self):
         Clock.unschedule(self.update)
@@ -41,9 +46,44 @@ class GameScreen(Screen):
             self.ids.spike.x = Window.width
         Clock.schedule_once(self.spawn_spike, random.uniform(1, 3))  # Adjust the spawn rate based on the level
 
+    def create_hole(self, dt=None):
+        # Randomly decide whether to create a hole in the ground
+        if random.random() < 0.1:  # Adjust the probability based on the level
+            hole_width = random.randint(50, 150)
+            self.ids.ground1.size = (self.ids.ground1.width - hole_width, self.ids.ground1.height)
+            self.ids.ground2.pos = (self.ids.ground1.right + hole_width, self.ids.ground2.y)
+        Clock.schedule_once(self.create_hole, random.uniform(5, 10))  # Adjust the spawn rate based on the level
+
     def game_over(self):
         print("Game Over!")
+        self.show_game_over_popup()
+
+    def show_game_over_popup(self):
+        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        layout.add_widget(Label(text='Game Over!'))
+
+        button_layout = BoxLayout(orientation='horizontal', spacing=10)
+        reset_button = Button(text='Play Again')
+        quit_button = Button(text='Quit')
+
+        button_layout.add_widget(reset_button)
+        button_layout.add_widget(quit_button)
+
+        layout.add_widget(button_layout)
+
+        popup = Popup(title='Game Over', content=layout, size_hint=(0.5, 0.5), auto_dismiss=False)
+
+        reset_button.bind(on_release=lambda *args: self.reset_game(popup))
+        quit_button.bind(on_release=lambda *args: self.quit_game())
+
+        popup.open()
+
+    def reset_game(self, popup):
+        popup.dismiss()
         self.manager.current = 'stage_selection'
+
+    def quit_game(self):
+        App.get_running_app().stop()
 
 class Player(Image):
     velocity = NumericProperty(0)
@@ -64,7 +104,7 @@ class Player(Image):
 
         # Continuously rotate while in the air
         if not self.on_ground:
-            self.rotation += 2  # Adjust the rotation speed to be slower
+            self.rotation += 5  # Adjust the rotation speed to be quicker
 
         # Move platforms to create the illusion of movement
         for platform in platforms:
@@ -82,7 +122,7 @@ class Player(Image):
             if obstacle.right <= 0:
                 obstacle.x = Window.width
 
-        # ตรวจสอบการชนกับ platform
+        # Check for collision with platforms
         for platform in platforms:
             if self.collide_widget(platform) and self.velocity <= 0:
                 self.y = platform.y + platform.height
@@ -93,11 +133,15 @@ class Player(Image):
         else:
             self.on_ground = False
 
-        # ตรวจสอบการชนกับ obstacle
+        # Check for collision with obstacles
         for obstacle in obstacles:
             if self.collide_widget(obstacle):
                 # Handle collision with spike (e.g., end game, reduce health, etc.)
                 App.get_running_app().root.get_screen('game').game_over()
+
+        # Check if player falls into a hole
+        if self.y < 0:
+            App.get_running_app().root.get_screen('game').game_over()
 
 class Platform(Image):
     pass
