@@ -1,0 +1,15 @@
+<StageSelectionScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Select Stage'
+        Button:
+            text: 'Stage 1'
+            on_release:
+                app.root.get_screen('game').set_background('assets/map_1.jpg')
+                app.root.current = 'game'
+        Button:
+            text: 'Stage 2'
+            on_release:
+                app.root.get_screen('game').set_background('assets/map_3.jpg')
+                app.root.current = 'game'

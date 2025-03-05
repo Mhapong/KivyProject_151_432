@@ -1,41 +1,47 @@
 <GameScreen>:
-    Image:
-        id: background
-        source: 'map_1.jpg'
-        allow_stretch: True
-        keep_ratio: False
+    FloatLayout:
+        Image:
+            id: background
+            source: ''
+            allow_stretch: True
+            keep_ratio: False
+            size_hint: (1, 1)
+        Player:
+            id: player
+            source: 'assets/cube_85.png'
+            size_hint: None, None
+            size: 50, 50
+            center_x: self.parent.width / 2
+            y: 150  # Adjust the player's initial y position if needed
+            canvas.before:
+                PushMatrix
+                Rotate:
+                    angle: - self.rotation
+                    origin: self.center
+            canvas.after:
+                PopMatrix
 
-    Player:
-        id: player
-        source: 'cube_85.png'
-        size_hint: None, None
-        size: 50, 50
-        pos: 100, 100
+        Platform:
+            id: ground1
+            source: 'assets/platform.png'
+            size_hint: None, None
+            size: root.width, 20
+            pos: 0, 100  # Set the ground higher
 
-    Platform:
-        id: platform1
-        source: 'platform.png'
-        size_hint: None, None
-        size: 200, 20
-        pos: 300, 50
+        Platform:
+            id: ground2
+            source: 'assets/platform.png'
+            size_hint: None, None
+            size: root.width, 20
+            pos: root.width, 100  # Set the ground higher and to the right of the first ground
 
-    Platform:
-        id: platform2
-        source: 'platform.png'
-        size_hint: None, None
-        size: 200, 20
-        pos: 600, 150
-
-    Obstacle:
-        id: obstacle1
-        source: 'spike.png'
-        size_hint: None, None
-        size: 50, 50
-        pos: 500, 70
-
-    Obstacle:
-        id: obstacle2
-        source: 'spike.png'
-        size_hint: None, None
-        size: 50, 50
-        pos: 800, 170
+        Spike:
+            id: spike
+            size_hint: None, None
+            size: 35 , 40
+            pos: root.width, 120  # Initial position off-screen
+            canvas.before:
+                Color:
+                    rgba: 1, 1, 1, 1  # Red color for the spike
+                Triangle:
+                    points: [self.x, self.y, self.x + self.width / 2, self.y + self.height, self.x + self.width, self.y]
