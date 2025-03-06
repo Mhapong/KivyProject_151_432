@@ -1,0 +1,9 @@
+{
+  "finish_x": 1500,
+  "obstacles": [
+    { "type": "spike", "x": 300, "y": 100 },
+    { "type": "boost_pad", "x": 500, "y": 120 },
+    { "type": "spike", "x": 800, "y": 100 },
+    { "type": "boost_pad", "x": 1100, "y": 120 }
+  ]
+}

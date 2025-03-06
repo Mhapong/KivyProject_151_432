@@ -1,8 +1,14 @@
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager
-from home import HomePage
-from stage_selection import StageSelectionScreen
+from home_screen import HomePage
+from stage_selection_screen import StageSelectionScreen
 from game_screen import GameScreen
+from kivy.lang import Builder
+
+# Load the KV files
+Builder.load_file('kv/home.kv')
+Builder.load_file('kv/stage_selection.kv')
+Builder.load_file('kv/game.kv')
 
 class MyApp(App):
     def build(self):
