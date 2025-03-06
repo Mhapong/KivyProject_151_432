@@ -17,6 +17,18 @@ from kivy.animation import Animation
 Builder.load_file('stage_selection.kv')
 Builder.load_file('game.kv')
 
+class HomePage(Screen):
+    def __init__(self, **kwargs):
+        super(HomePage, self).__init__(**kwargs)
+        layout = BoxLayout(orientation='vertical')
+        button = Button(text='Go to Level Selection')
+        button.bind(on_press=self.go_to_level_selection)
+        layout.add_widget(button)
+        self.add_widget(layout)
+
+    def go_to_level_selection(self, instance):
+        self.manager.current = 'stage_selection'
+
 class StageSelectionScreen(Screen):
     pass
 
@@ -210,7 +222,6 @@ class Player(Image):
         # After the animation ends, trigger game over
         App.get_running_app().root.get_screen('game').game_over()
 
-
 class FinishLine(Image):
     pass
 
@@ -223,6 +234,7 @@ class Spike(Widget):
 class MyApp(App):
     def build(self):
         sm = ScreenManager()
+        sm.add_widget(HomePage(name='home'))
         sm.add_widget(StageSelectionScreen(name='stage_selection'))
         sm.add_widget(GameScreen(name='game'))
         return sm
