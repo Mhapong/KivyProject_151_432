@@ -63,6 +63,7 @@ class GameScreen(Screen):
         Window.bind(on_key_down=self.on_key_down)
         self.spawn_spike()
         self.create_hole()
+        self.spawn_boost_pad()
 
         # Create Finish Line
         self.finish_line = FinishLine()
@@ -81,7 +82,7 @@ class GameScreen(Screen):
             [self.ids.ground1, self.ids.ground2],
             [self.ids.spike],
             self.finish_line,
-            []
+            [self.ids.boost_pad]
         )
 
     def on_key_down(self, window, key, *args):
@@ -95,10 +96,15 @@ class GameScreen(Screen):
 
     def create_hole(self, dt=None):
         if random.random() < 0.1:
-            hole_width = random.randint(50, 150)
+            hole_width = random.randint(50, 100)
             self.ids.ground1.size = (self.ids.ground1.width - hole_width, self.ids.ground1.height)
             self.ids.ground2.pos = (self.ids.ground1.right + hole_width, self.ids.ground2.y)
         Clock.schedule_once(self.create_hole, random.uniform(5, 10))
+
+    def spawn_boost_pad(self, dt=None):
+        if random.random() < 0.05:  # 5% chance
+            self.ids.boost_pad.x = Window.width + random.randint(50, 500)
+        Clock.schedule_once(self.spawn_boost_pad, random.uniform(5, 15))
 
     def game_over(self):
         print("Game Over!")
@@ -133,12 +139,14 @@ class GameScreen(Screen):
         self.ids.ground1.x = 0
         self.ids.ground2.x = self.ids.ground1.right
         self.ids.spike.x = Window.width + 100
+        self.ids.boost_pad.x = Window.width + 1000
         
         self.finish_line.x = Window.width + 800
         self.finish_line.y = self.ids.ground1.top
         
         self.spawn_spike()
         self.create_hole()
+        self.spawn_boost_pad()
         
         Clock.schedule_interval(self.update, 1.0 / 60.0)
 
