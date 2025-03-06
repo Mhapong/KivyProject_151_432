@@ -39,13 +39,26 @@
         Spike:
             id: spike
             size_hint: None, None
-            size: 35, 40
+            size: 30, 30
             pos: root.width, 120  # Initial position off-screen
             canvas.before:
                 Color:
                     rgba: 1, 1, 1, 1  # White color for the spike
                 Triangle:
                     points: [self.x, self.y, self.x + self.width / 2, self.y + self.height, self.x + self.width, self.y]
+
+        BoostPad:
+            id: boost_pad
+            size_hint: None, None
+            size: 50, 10
+            pos: root.width, 130  # Initial position off-screen
+            canvas.before:
+                Color:
+                    rgba: 0, 1, 0, 1  # Green color for the boost pad
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+
 <FinishLine>:
     source: "finish.png"
     size_hint: (None, None)

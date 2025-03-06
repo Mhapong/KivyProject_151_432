@@ -12,6 +12,11 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.animation import Animation
+from kivy.config import Config
+
+# Set the window size
+Config.set('graphics', 'width', '1280')
+Config.set('graphics', 'height', '720')
 
 # Load the KV files
 Builder.load_file('stage_selection.kv')
@@ -21,7 +26,7 @@ class HomePage(Screen):
     def __init__(self, **kwargs):
         super(HomePage, self).__init__(**kwargs)
         layout = BoxLayout(orientation='vertical')
-        button = Button(text='Go to Level Selection')
+        button = Button(text='Go to Level Selection', size_hint=(0.3, 0.1), pos_hint={'center_x': 0.5, 'center_y': 0.5}, font_size='24sp')
         button.bind(on_press=self.go_to_level_selection)
         layout.add_widget(button)
         self.add_widget(layout)
@@ -40,20 +45,23 @@ class GameScreen(Screen):
         Clock.schedule_interval(self.update, 1.0 / 60.0)
         Window.bind(on_key_down=self.on_key_down)
         self.spawn_spike()
+        self.spawn_boost_pad()
         self.create_hole()
 
         # Create Finish Line
         self.finish_line = FinishLine()
+        self.finish_line.size_hint = (None, None)
+        self.finish_line.size = (100, 100)
         self.finish_line.x = Window.width + 800  # Adjust the distance further out
         self.finish_line.y = self.ids.ground1.top
         self.add_widget(self.finish_line)
 
     def on_leave(self):
         Clock.unschedule(self.update)
-        Window.unbind(on_key_down=self.on_key_down)
+        Window.unbind(on_key_down(self.on_key_down))
 
     def update(self, dt):
-        self.ids.player.update([self.ids.ground1, self.ids.ground2], [self.ids.spike], self.finish_line)
+        self.ids.player.update([self.ids.ground1, self.ids.ground2], [self.ids.spike], self.finish_line, [self.ids.boost_pad])
 
     def on_key_down(self, window, key, *args):
         if key == 32:  # 32 is the keycode for the spacebar
@@ -64,6 +72,16 @@ class GameScreen(Screen):
         if random.random() < 0.1:  # Adjust the probability based on the level
             self.ids.spike.x = Window.width
         Clock.schedule_once(self.spawn_spike, random.uniform(1, 3))  # Adjust the spawn rate based on the level
+
+    def spawn_boost_pad(self, dt=None):
+        # Randomly decide whether to spawn a boost pad based on the level
+        if random.random() < 0.05:  # Lower the probability based on the level
+            # Ensure boost pad does not spawn at the same position as the spike
+            boost_pad_x = Window.width
+            if abs(boost_pad_x - self.ids.spike.x) < 100:  # Adjust the distance threshold as needed
+                boost_pad_x += 100  # Move the boost pad further to the right
+            self.ids.boost_pad.x = boost_pad_x
+        Clock.schedule_once(self.spawn_boost_pad, random.uniform(5, 10))  # Adjust the spawn rate based on the level
 
     def create_hole(self, dt=None):
         # Randomly decide whether to create a hole in the ground
@@ -79,11 +97,11 @@ class GameScreen(Screen):
 
     def show_game_over_popup(self):
         layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
-        layout.add_widget(Label(text='Game Over!'))
+        layout.add_widget(Label(text='Game Over!', font_size='24sp'))
 
         button_layout = BoxLayout(orientation='horizontal', spacing=10)
-        reset_button = Button(text='Play Again')
-        quit_button = Button(text='Quit')
+        reset_button = Button(text='Play Again', font_size='20sp')
+        quit_button = Button(text='Quit', font_size='20sp')
 
         button_layout.add_widget(reset_button)
         button_layout.add_widget(quit_button)
@@ -110,13 +128,15 @@ class GameScreen(Screen):
         self.ids.ground1.x = 0
         self.ids.ground2.x = self.ids.ground1.right
         self.ids.spike.x = Window.width + 100  # Reset spike position to off-screen
+        self.ids.boost_pad.x = Window.width + 100  # Reset boost pad position to off-screen
 
         # Recreate the finish line at its starting position
         self.finish_line.x = Window.width + 800  # Adjust to your preferred starting position
         self.finish_line.y = self.ids.ground1.top
 
-        # Restart the spawn of spikes and holes
+        # Restart the spawn of spikes, boost pads, and holes
         self.spawn_spike()
+        self.spawn_boost_pad()
         self.create_hole()
 
         # Set the game state to active again
@@ -124,11 +144,11 @@ class GameScreen(Screen):
 
     def level_complete(self):
         layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
-        layout.add_widget(Label(text='You Win! 🎉'))
+        layout.add_widget(Label(text='You Win! 🎉', font_size='24sp'))
 
         button_layout = BoxLayout(orientation='horizontal', spacing=10)
-        next_button = Button(text='Next Level')
-        menu_button = Button(text='Main Menu')
+        next_button = Button(text='Next Level', font_size='20sp')
+        menu_button = Button(text='Main Menu', font_size='20sp')
 
         button_layout.add_widget(next_button)
         button_layout.add_widget(menu_button)
@@ -156,6 +176,7 @@ class Player(Image):
     x_velocity = NumericProperty(4)  # Increase horizontal speed
     gravity = -0.5
     jump_strength = 12  # Reduce jump height
+    super_jump_strength = 24  # Super jump height
     on_ground = BooleanProperty(True)
     rotation = NumericProperty(0)  # Add rotation property
 
@@ -164,7 +185,11 @@ class Player(Image):
             self.velocity = self.jump_strength
             self.on_ground = False
 
-    def update(self, platforms, obstacles, finish_line):
+    def super_jump(self):
+        self.velocity = self.super_jump_strength
+        self.on_ground = False
+
+    def update(self, platforms, obstacles, finish_line, boost_pads):
         self.velocity += self.gravity
         self.y += self.velocity
 
@@ -188,6 +213,14 @@ class Player(Image):
             if obstacle.right <= 0:
                 obstacle.x = Window.width
 
+        # Move boost pads to create the illusion of movement
+        for boost_pad in boost_pads:
+            boost_pad.x -= self.x_velocity
+
+            # Reset boost pad position if it moves off-screen
+            if boost_pad.right <= 0:
+                boost_pad.x = Window.width
+
         # Check for collision with platforms
         for platform in platforms:
             if self.collide_widget(platform) and self.velocity <= 0:
@@ -204,6 +237,11 @@ class Player(Image):
             if self.collide_widget(obstacle):
                 # Handle collision with spike (e.g., end game, reduce health, etc.)
                 self.trigger_death_effect()
+
+        # Check for collision with boost pads
+        for boost_pad in boost_pads:
+            if self.collide_widget(boost_pad):
+                self.super_jump()
 
         # Check if player falls into a hole
         if self.y < 0:
@@ -229,6 +267,9 @@ class Platform(Image):
     pass
 
 class Spike(Widget):
+    pass
+
+class BoostPad(Widget):
     pass
 
 class MyApp(App):
