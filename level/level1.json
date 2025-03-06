@@ -1,0 +1,9 @@
+{
+  "background": "assets/bg1.png",
+  "obstacles": [
+    { "type": "spike", "x": 300 },
+    { "type": "mega_spike", "x": 600 },
+    { "type": "boost_pad", "x": 900 }
+  ],
+  "finish_line": 1200
+}
