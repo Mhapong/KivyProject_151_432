@@ -1,0 +1,33 @@
+<StageSelectionScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 50
+        spacing: 20
+
+        Label:
+            text: 'Select Stage'
+            font_size: '36sp'
+            bold: True
+            size_hint_y: 0.2
+
+        GridLayout:
+            cols: 2
+            spacing: 20
+            size_hint_y: 0.7
+
+            Button:
+                text: 'Stage 1'
+                font_size: '24sp'
+                on_press: app.root.get_screen('game').load_level('level1'); app.root.current = 'game'
+
+            Button:
+                text: 'Stage 2'
+                font_size: '24sp'
+                on_press: app.root.get_screen('game').load_level('level2'); app.root.current = 'game'
+
+        Button:
+            text: 'Back to Home'
+            size_hint: 0.3, 0.1
+            pos_hint: {'center_x': 0.5}
+            font_size: '24sp'
+            on_press: app.root.current = 'home'
