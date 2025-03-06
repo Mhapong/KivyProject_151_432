@@ -102,7 +102,7 @@ class GameScreen(Screen):
         Clock.schedule_once(self.create_hole, random.uniform(5, 10))
 
     def spawn_boost_pad(self, dt=None):
-        if random.random() < 0.05:  # 5% chance
+        if random.random() < 0.025:  # 5% chance
             self.ids.boost_pad.x = Window.width + random.randint(50, 500)
         Clock.schedule_once(self.spawn_boost_pad, random.uniform(5, 15))
 
@@ -116,39 +116,53 @@ class GameScreen(Screen):
         
         button_layout = BoxLayout(orientation='horizontal', spacing=10)
         reset_button = Button(text='Play Again', font_size='20sp')
-        quit_button = Button(text='Quit', font_size='20sp')
+        Home_button = Button(text='Back to Home', font_size='20sp')
         
         button_layout.add_widget(reset_button)
-        button_layout.add_widget(quit_button)
+        button_layout.add_widget(Home_button)
         layout.add_widget(button_layout)
         
         popup = Popup(title='Game Over', content=layout, size_hint=(0.5, 0.5), auto_dismiss=False)
         
-        reset_button.bind(on_release=lambda *args: self.reset_game(popup))
-        quit_button.bind(on_release=lambda *args: self.quit_game())
+        reset_button.bind(on_release=lambda instance: self.reset_game(instance, popup))
+        Home_button.bind(on_release=lambda instance: self.go_to_menu(instance, popup))
+
         
         popup.open()
+    
+    def trigger_death_effect(self):
+        death_animation = Animation(opacity=0, rotation=720, duration=1)
+        death_animation.bind(on_complete=self.on_death_complete)
+        death_animation.start(self)
 
-    def reset_game(self, popup):
+
+    def reset_game(self, instance, popup):
         popup.dismiss()
+
+        # รีเซ็ตขนาดและความโปร่งใส
+        self.ids.player.size = (50, 50)  # หรือขนาดเดิมของตัวละคร
+        self.ids.player.opacity = 1  # ให้กลับมาเห็นได้
+        self.ids.player.rotation = 0
+
         self.ids.player.pos = (100, Window.height // 2)
         self.ids.player.velocity = 0
         self.ids.player.on_ground = True
-        self.ids.player.rotation = 0
-        
+
         self.ids.ground1.x = 0
         self.ids.ground2.x = self.ids.ground1.right
         self.ids.spike.x = Window.width + 100
         self.ids.boost_pad.x = Window.width + 1000
-        
+
         self.finish_line.x = Window.width + 800
         self.finish_line.y = self.ids.ground1.top
-        
+
         self.spawn_spike()
         self.create_hole()
         self.spawn_boost_pad()
-        
+
         Clock.schedule_interval(self.update, 1.0 / 60.0)
+
+
 
     def level_complete(self):
         layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
