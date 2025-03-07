@@ -11,7 +11,7 @@ class Player(Image):
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.gravity = -700
+        self.gravity = -1200
         self.jump_speed = 700
         self.moving_speed = 500
         self.world_x = 0
@@ -23,7 +23,7 @@ class Player(Image):
         self.y += self.velocity_y * dt
         
         if self.is_jumping:
-            self.rotation += 360 * dt
+            self.rotation += 360 * dt  # เพิ่มการหมุนตัว
         
         # เช็คการชนพื้น
         if self.y < 100:

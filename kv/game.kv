@@ -1,52 +1,54 @@
 <GameScreen>:
     FloatLayout:
+        id: game_screen
 
         Image:
             id: background
-            source: ''
+            source: 'assets/image/map_1.jpg'
             allow_stretch: True
             keep_ratio: False
             size_hint: (1, 1)
 
-        Player:
-            id: player
-            source: '../assets/image/cube_85.png'
-            size_hint: None, None
-            size: 50, 50
-            center_x: self.parent.width / 2
-            y: 150  # Adjust the player's initial y position if needed
-            canvas.before:
-                PushMatrix
-                Rotate:
-                    angle: -self.rotation
-                    origin: self.center
-            canvas.after:
-                PopMatrix
+        Widget:
+            id: game_world
 
-        Image:
-            id: ground1
-            source: 'assets/image/ground.png'
-            size_hint: None, None
-            size: 1280, 50
-            pos: 0, 0
+            Player:
+                id: player
+                source: 'assets/image/cube_85.png'
+                size_hint: None, None
+                size: 50, 50
+                center_x: self.parent.width / 2
+                y: 150  # Adjust the player's initial y position if needed
+                canvas.before:
+                    PushMatrix
+                    Rotate:
+                        angle: -self.rotation
+                        origin: self.center
+                canvas.after:
+                    PopMatrix
 
-        Image:
-            id: ground2
-            source: 'assets/image/ground.png'
-            size_hint: None, None
-            size: 1280, 50
-            pos: 1280, 0
+            Image:
+                id: ground1
+                source: 'assets/image/ground.png'
+                size_hint: None, None
+                size: 1280, 50
+                pos: 0, 0
 
-        Spike:
-            id: spike
-            source: '../assets/spike.png'
-            size_hint: None, None
-            size: 50, 50
-            pos: 1280, 50
+            Image:
+                id: ground2
+                source: 'assets/image/ground.png'
+                size_hint: None, None
+                size: 1280, 50
+                pos: 1280, 0
 
-        BoostPad:
-            id: boost_pad
-            source: '../assets/boost_pad.png'
-            size_hint: None, None
-            size: 50, 20
-            pos: 1500, 50
+            Spike:
+                id: spike
+                size_hint: None, None
+                size: 50, 50
+                pos: 1280, 50
+
+            BoostPad:
+                id: boost_pad
+                size_hint: None, None
+                size: 50, 20
+                pos: 1500, 50

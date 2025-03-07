@@ -4,6 +4,9 @@ from home_screen import HomePage
 from stage_selection_screen import StageSelectionScreen
 from game_screen import GameScreen
 from kivy.lang import Builder
+from kivy.uix.image import Image
+from kivy.properties import NumericProperty
+from kivy.animation import Animation
 
 # Load the KV files
 Builder.load_file('kv/home.kv')

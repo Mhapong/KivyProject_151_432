@@ -15,8 +15,7 @@ class GameScreen(Screen):
         super().__init__(**kwargs)
         
         # Create game world
-        self.game_world = Widget()
-        self.add_widget(self.game_world)
+        self.game_world = self.ids.game_world
         
         # Create background
         with self.game_world.canvas.before:
@@ -27,9 +26,8 @@ class GameScreen(Screen):
         self.floor = Floor()
         self.game_world.add_widget(self.floor)
         
-        # Create player
-        self.player = Player(size=(30, 30))  # ทำให้ตัวละครเล็กลง
-        self.game_world.add_widget(self.player)
+        # Get player from kv file
+        self.player = self.ids.player
         
         # Initialize lists
         self.obstacles = []
