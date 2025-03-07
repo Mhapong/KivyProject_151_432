@@ -1,5 +1,6 @@
 {
   "finish_x": 1800,
+  "background": "assets/image/map_3.jpg",
   "obstacles": [
     { "type": "spike", "x": 200, "y": 100 },
     { "type": "boost_pad", "x": 400, "y": 120 },

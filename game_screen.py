@@ -17,11 +17,6 @@ class GameScreen(Screen):
         # Create game world
         self.game_world = self.ids.game_world
         
-        # Create background
-        with self.game_world.canvas.before:
-            Color(0.2, 0.2, 0.2)
-            self.bg = Rectangle(pos=(0, 0), size=(Window.width * 3, Window.height))
-        
         # Create floor
         self.floor = Floor()
         self.game_world.add_widget(self.floor)
@@ -94,6 +89,10 @@ class GameScreen(Screen):
         try:
             with open(level_file, 'r') as f:
                 self.level_data = json.load(f)
+                
+            # Set background image
+            if 'background' in self.level_data:
+                self.ids.background.source = self.level_data['background']
                 
             # ลบ platforms เก่า
             for platform in self.platforms:
