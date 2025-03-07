@@ -118,12 +118,11 @@ class GameScreen(Screen):
             if 'obstacles' in self.level_data:
                 for obstacle_data in self.level_data['obstacles']:
                     if obstacle_data['type'] == 'spike':
-                        obstacle = Spike()
+                        obstacle = Spike(pos=(obstacle_data['x'], obstacle_data['y']))
                     elif obstacle_data['type'] == 'boost_pad':
-                        obstacle = BoostPad()
+                        obstacle = BoostPad(pos=(obstacle_data['x'], obstacle_data['y']))
                     else:
                         continue
-                    obstacle.pos = (obstacle_data['x'], obstacle_data['y'])
                     self.obstacles.append(obstacle)
                     self.game_world.add_widget(obstacle)
             

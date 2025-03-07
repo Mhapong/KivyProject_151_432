@@ -11,7 +11,6 @@ from kivy.animation import Animation
 # Load the KV files
 Builder.load_file('kv/home.kv')
 Builder.load_file('kv/stage_selection.kv')
-Builder.load_file('kv/game.kv')
 
 class MyApp(App):
     def build(self):

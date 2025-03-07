@@ -1,6 +1,6 @@
 from kivy.uix.widget import Widget
 from kivy.uix.image import Image
-from kivy.graphics import Rectangle, Color
+from kivy.graphics import Rectangle, Color, Triangle
 from kivy.core.window import Window
 from kivy.properties import NumericProperty, BooleanProperty
 from kivy.animation import Animation
@@ -55,21 +55,23 @@ class Player(Image):
         anim.start(self)
 
 class Spike(Widget):
-    def __init__(self, **kwargs):
+    def __init__(self, pos, **kwargs):
         super().__init__(**kwargs)
         self.size = (30, 30)
+        self.pos = pos
         with self.canvas:
-            Color(0.7, 0.7, 0.7)  # Light gray color
-            self.rect = Rectangle(pos=self.pos, size=self.size)
-        self.bind(pos=self._update_rect)
+            Color(1, 0, 0)  # Red color
+            self.triangle = Triangle(points=[self.x, self.y, self.x + self.width / 2, self.y + self.height, self.x + self.width, self.y])
+        self.bind(pos=self._update_shape, size=self._update_shape)
         
-    def _update_rect(self, *args):
-        self.rect.pos = self.pos
+    def _update_shape(self, *args):
+        self.triangle.points = [self.x, self.y, self.x + self.width / 2, self.y + self.height, self.x + self.width, self.y]
 
 class BoostPad(Widget):
-    def __init__(self, **kwargs):
+    def __init__(self, pos, **kwargs):
         super().__init__(**kwargs)
         self.size = (40, 20)
+        self.pos = pos
         with self.canvas:
             Color(1, 1, 0)  # Yellow color
             self.rect = Rectangle(pos=self.pos, size=self.size)
