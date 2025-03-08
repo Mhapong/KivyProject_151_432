@@ -62,22 +62,27 @@ class GameScreen(Screen):
             if obstacle.right < 0:
                 self.obstacles.remove(obstacle)
                 self.game_world.remove_widget(obstacle)
+        
+        # Move finish lines
+        for finish_line in self.finish_lines[:]:
+            finish_line.x -= self.player.moving_speed * dt
+            
+            # Debug print to verify finish line position
+            print(f"Finish line at: {finish_line.pos}, Player at: {self.player.pos}")
+            
+            # Check if player reached finish line
+            if finish_line.check_collision(self.player):
+                self.level_complete()
+                return
 
-        # Check platform collisions first
+        # Rest of your update logic remains the same
         on_platform = self.check_platform_collisions()
         if not on_platform:
             self.player.on_ground = False
 
-        # Update player position and check collisions
         if self.player.update(dt, self.obstacles, self.platforms):
             self.game_over()
             return
-
-        # Check finish line
-        for finish_line in self.finish_lines:
-            if finish_line.check_collision(self.player):
-                self.level_complete()
-                return
     
     def _on_key_down(self, instance, keyboard, keycode, text, modifiers):
         if isinstance(keycode, tuple):
@@ -361,6 +366,11 @@ class GameScreen(Screen):
 
     def create_finish_line(self):
         if 'finish_x' in self.level_data:
-            finish_line = FinishLine(pos=(self.level_data['finish_x'], 0))
+            finish_x = self.level_data['finish_x']
+            print(f"Creating finish line at x={finish_x}")
+            finish_line = FinishLine(pos=(finish_x, 0))
             self.finish_lines.append(finish_line)
             self.game_world.add_widget(finish_line)
+            print(f"Finish line added: {finish_line}, position: {finish_line.pos}")
+        else:
+            print("No finish_x in level data!")
