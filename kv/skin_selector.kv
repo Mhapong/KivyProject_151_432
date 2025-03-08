@@ -1,0 +1,56 @@
+<SkinSelectorScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: 10
+        spacing: 10
+
+        # Title Label
+        Label:
+            text: "Select Your Skin"
+            font_size: '24sp'
+            size_hint_y: None
+            height: 50
+
+        # GridLayout for skin buttons
+        GridLayout:
+            cols: 2
+            spacing: 10
+            size_hint_y: 0.8  # Take up 80% of the vertical space
+
+            # Hardcoded skin buttons with images
+            Button:
+                size_hint: None, None
+                size: 200, 200
+                on_release: root.select_skin('assets/image/cube_5.png')
+                Image:
+                    source: 'assets/images/cube_5.png'
+                    size: 200, 200
+                    allow_stretch: True
+                    keep_ratio: True
+
+            Button:
+                size_hint: None, None
+                size: 200, 200
+                on_release: root.select_skin('assets/image/cube_56.png')
+                Image:
+                    source: 'assets/images/cube_56.png'
+                    size: 200, 200
+                    allow_stretch: True
+                    keep_ratio: True
+
+            Button:
+                size_hint: None, None
+                size: 200, 200
+                on_release: root.select_skin('assets/image/cube_85.png')
+                Image:
+                    source: 'assets/images/cube_85.png'
+                    size: 200, 200
+                    allow_stretch: True
+                    keep_ratio: True
+
+        # Back Button
+        Button:
+            text: "Back"
+            size_hint_y: None
+            height: 50
+            on_release: app.root.current = 'home'

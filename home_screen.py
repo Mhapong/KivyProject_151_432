@@ -5,6 +5,10 @@ from kivy.lang import Builder
 Builder.load_file('kv/home.kv')
 
 class HomePage(Screen):
+
+    def go_to_skin_selector(self, instance):
+        self.manager.current = 'skin_selector'
+
     def go_to_level_selection(self, instance):
         self.manager.current = 'stage_selection'
 

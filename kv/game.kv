@@ -2,21 +2,24 @@
     FloatLayout:
         id: game_screen
 
+        # Background Image
         Image:
             id: background
             source: 'assets/image/map_1.jpg'
             size_hint: (1, 1)
 
+        # Game World Widget
         Widget:
             id: game_world
 
+            # Player
             Player:
                 id: player
-                source: 'assets/image/cube_85.png'
+                source: root.player_skin  # Use root.player_skin to refer to the property in the GameScreen class
                 size_hint: None, None
                 size: 50, 50
                 center_x: self.parent.width / 2
-                y: 150  # Adjust the player's initial y position if needed
+                y: 150  # Initial y position
                 canvas.before:
                     PushMatrix
                     Rotate:
@@ -25,6 +28,7 @@
                 canvas.after:
                     PopMatrix
 
+            # Ground Elements
             Image:
                 id: ground1
                 source: 'assets/image/ground.png'
