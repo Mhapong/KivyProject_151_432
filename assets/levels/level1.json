@@ -1,6 +1,6 @@
 {
   "name": "Level 1",
-  "finish_x": 1200,
+  "finish_x": 3000,
   "background": "assets/image/map_1.jpg",
   "platforms": [
     { "pos": [-100, 0], "size": [100, 400] },
