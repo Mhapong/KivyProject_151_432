@@ -57,8 +57,12 @@ class GameScreen(Screen):
                 self.platforms.remove(platform)
                 self.game_world.remove_widget(platform)
         
+        # Move obstacles with custom positioning
         for obstacle in self.obstacles[:]:
+            # Calculate new x position based on initial relative position and moving speed
             obstacle.x -= self.player.moving_speed * dt
+            
+            # Remove obstacles that move off-screen
             if obstacle.right < 0:
                 self.obstacles.remove(obstacle)
                 self.game_world.remove_widget(obstacle)
@@ -67,8 +71,8 @@ class GameScreen(Screen):
         for finish_line in self.finish_lines[:]:
             finish_line.x -= self.player.moving_speed * dt
             
-            # Debug print to verify finish line position
-            print(f"Finish line at: {finish_line.pos}, Player at: {self.player.pos}")
+            # Comment out debug prints to reduce console spam
+            # print(f"Finish line at: {finish_line.pos}, Player at: {self.player.pos}")
             
             # Check if player reached finish line
             if finish_line.check_collision(self.player):
@@ -85,20 +89,26 @@ class GameScreen(Screen):
             return
     
     def _on_key_down(self, instance, keyboard, keycode, text, modifiers):
+        print(f"Key pressed: {keycode}")  # Debug print
         if isinstance(keycode, tuple):
             code, key = keycode
         else:
             code = keycode
             key = None
 
-        # Check both the keycode number and name for space
+        # Check both keycode number and key name for space
         if code == 32 or key == 'spacebar' or key == 'space':
-            if self.player and self.player.on_ground:
+            print("Space key detected!")
+            if self.player and hasattr(self.player, 'on_ground'):
+                print(f"Player on_ground: {self.player.on_ground}")
                 self.player.jump()
 
     def _on_mouse_down(self, instance, x, y, button, modifiers):
+        print(f"Mouse click detected at {x}, {y}, button: {button}")
         if button == 'left':
-            if self.player and self.player.on_ground:
+            print(f"Player state: on_ground={self.player.on_ground}")
+            # Only call jump if the game is active
+            if self.game_loop and self.player:
                 self.player.jump()
     
     def game_over(self):
@@ -254,10 +264,14 @@ class GameScreen(Screen):
             self.load_level(self.level_file)
             
             if self.player:
-                # Position player
+                # Position player at proper height
                 if self.platforms:
                     first_platform = self.platforms[0]
                     self.player.pos = (100, first_platform.top + 10)
+                    # Explicitly set the player to be on ground
+                    print("Setting player on ground at level start")
+                    self.player.on_ground = True
+                    self.player.velocity = 0
                 else:
                     self.player.pos = (100, 100)
                 
@@ -265,17 +279,17 @@ class GameScreen(Screen):
                 self.player.world_x = 0
                 self.player.velocity = 0
                 self.player.moving_speed = 500
-                self.player.on_ground = True
+                self.player.on_ground = True  # Ensure this is set
                 self.player.is_jumping = False
                 self.player.rotation = 0
                 self.player.opacity = 1
                 self.player.source = self.player_skin
-                self.player.original_source = self.player_skin  # Set original source
-            
-            # Start game loop
-            self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)
-            if self.background_music:
-                self.background_music.play()
+                self.player.original_source = self.player_skin
+        
+        # Start game loop
+        self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)
+        if self.background_music:
+            self.background_music.play()
     
     def load_level(self, level_file):
         try:
@@ -320,24 +334,35 @@ class GameScreen(Screen):
         self.finish_lines.clear()
         
     def check_platform_collisions(self):
+        on_platform = False
         for platform in self.platforms:
-            # More precise collision detection
-            if (self.player.velocity < 0 and  # Only check when falling
-                self.player.x + self.player.width * 0.2 < platform.x + platform.width and
-                self.player.x + self.player.width * 0.8 > platform.x and
-                self.player.y > platform.y - 5 and
-                self.player.y < platform.y + platform.height):
+            # Simplified collision detection for jumping fix
+            x_overlap = (self.player.x + self.player.width * 0.8 > platform.x and 
+                        self.player.x + self.player.width * 0.2 < platform.x + platform.width)
+            
+            # Slightly more generous threshold
+            below_threshold = 10
+            
+            if (x_overlap and
+                abs(self.player.y - platform.top) < below_threshold and
+                self.player.velocity <= 0):  # Only when falling or standing
                 
-                # Snap to platform more precisely
                 self.player.y = platform.top
                 self.player.velocity = 0
-                self.player.on_ground = True
-                self.player.is_jumping = False
-                
-                # Snap rotation to nearest 90 degrees
-                self.player.rotation = round(self.player.rotation / 90) * 90
-                return True
-        return False
+                if not self.player.on_ground:  # Only update if changing state
+                    print("Player landed on platform")
+                    self.player.on_ground = True
+                    self.player.is_jumping = False
+                    
+                    # Snap rotation to nearest 90 degrees
+                    self.player.rotation = round(self.player.rotation / 90) * 90
+                on_platform = True
+                break
+        
+        if not on_platform and self.player.on_ground:
+            print("Player left platform")
+        
+        return on_platform
                     
     def check_collision(self, rect1, rect2):
         return (rect1[0] < rect2[0] + rect2[2] and
@@ -358,11 +383,22 @@ class GameScreen(Screen):
         if 'obstacles' in self.level_data:
             for obstacle_data in self.level_data['obstacles']:
                 if obstacle_data['type'] == 'spike':
+                    # Create the spike
                     obstacle = Spike(pos=(obstacle_data['x'], obstacle_data['y']))
+                    self.obstacles.append(obstacle)
+                    self.game_world.add_widget(obstacle)
+                    
+                    # Store the associated platform for each obstacle
+                    obstacle.initial_x = obstacle_data['x']  # Store initial x position
+                    
                 elif obstacle_data['type'] == 'boost_pad':
+                    # Create the boost pad
                     obstacle = BoostPad(pos=(obstacle_data['x'], obstacle_data['y']))
-                self.obstacles.append(obstacle)
-                self.game_world.add_widget(obstacle)
+                    self.obstacles.append(obstacle)
+                    self.game_world.add_widget(obstacle)
+                    
+                    # Store the associated platform for each obstacle
+                    obstacle.initial_x = obstacle_data['x']  # Store initial x position
 
     def create_finish_line(self):
         if 'finish_x' in self.level_data:

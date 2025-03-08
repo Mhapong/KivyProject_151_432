@@ -30,19 +30,59 @@ class Player(Image):
         self.source = self.original_source
 
     def update(self, dt, obstacles=None, platforms=None, finish_line=None):
-        # Update vertical position with physics
+        # Store previous position for collision resolution
+        old_x = self.x
+        old_y = self.y
+        
+        # Apply gravity
         self.velocity += self.gravity * dt
         
         # Terminal velocity to prevent falling too fast
         if self.velocity < -1000:
             self.velocity = -1000
-            
+        
+        # Update position
         self.y += self.velocity * dt
-
+        
+        # Platform collision with improved physics
+        if platforms:
+            for platform in platforms:
+                # Basic collision detection (wider tolerance on sides)
+                x_overlap = (self.x + self.width * 0.8 > platform.x and 
+                             self.x + self.width * 0.2 < platform.x + platform.width)
+                
+                y_above_platform = old_y >= platform.top - 5
+                y_intersect_platform = self.y < platform.top + 10
+                
+                # Top collision - only activate when falling
+                if x_overlap and y_above_platform and y_intersect_platform and self.velocity < 0:
+                    self.y = platform.top  # Place player on top of platform
+                    self.velocity = 0
+                    self.on_ground = True
+                    self.is_jumping = False
+                    
+                    # Snap to nearest 90 degrees when landing
+                    target_angle = round(self.rotation / 90) * 90
+                    self.rotation = target_angle
+                
+                # Side collision - make player stop when hitting platform side
+                elif (not y_above_platform and 
+                      self.y + self.height * 0.3 > platform.y and 
+                      self.y < platform.y + platform.height * 0.7):
+                    # Check if player is trying to move into a platform from the side
+                    if (self.x + self.width > platform.x and 
+                        self.x + self.width < platform.x + 20):  # Left side collision
+                        # Stop horizontal movement
+                        return True  # Hit platform from side = death
+                    
+                    elif (self.x < platform.x + platform.width and 
+                          self.x > platform.x + platform.width - 20):  # Right side collision
+                        # Stop horizontal movement
+                        return True  # Hit platform from side = death
+        
         # Geometry Dash style rotation - always rotate clockwise during jumps
         if not self.on_ground:
             # Determine rotation speed based on jump arc
-            # Higher speed at beginning and end of jump, slower at peak
             jump_height_factor = abs(self.velocity) / self.jump_strength
             base_rotation_speed = 360  # Degrees per second
             rotation_speed = base_rotation_speed * (0.5 + jump_height_factor)
@@ -70,39 +110,24 @@ class Player(Image):
                     self.on_ground = False
                     self.is_jumping = True
 
-        # Platform collision
-        if platforms:
-            on_platform = False
-            for platform in platforms:
-                if self.collide_widget(platform) and self.velocity < 0:  # Only check when falling
-                    self.y = platform.top
-                    self.velocity = 0
-                    self.on_ground = True
-                    self.is_jumping = False
-                    
-                    # Snap to nearest 90 degrees when landing
-                    target_angle = round(self.rotation / 90) * 90
-                    self.rotation = target_angle
-                    on_platform = True
-                    break
-
         # Check finish line
-        if finish_line and isinstance(finish_line, FinishLine) and self.collide_widget(finish_line):
+        if finish_line and isinstance(finish_line, FinishLine) and finish_line.check_collision(self):
             return "finish"
 
         return False
 
     def jump(self):
-        if self.on_ground:
+        if self.on_ground:  # Only jump if on the ground
+            print(f"Jump method called. on_ground={self.on_ground}")
             self.velocity = self.jump_strength
             self.on_ground = False
             self.is_jumping = True
-            
-            # Don't reset rotation to 0, continue from current angle
-            # This makes multiple jumps look smoother
-            
+            print(f"Jump initiated. New velocity: {self.velocity}")
+            # Make sure correct skin is applied
             self.opacity = 1
             self.source = self.original_source
+        else:
+            print("Cannot jump - player is in the air")
 
     def die(self):
         anim = Animation(opacity=0, duration=0.5) + Animation(opacity=1, duration=0.5)
@@ -150,6 +175,7 @@ class Spike(Widget):
         super().__init__(**kwargs)
         self.size = (30, 30)  # Keep original size
         self.pos = pos
+        self.initial_x = pos[0]  # Store initial x position
         # Calculate triangle points
         self.triangle_points = self._calculate_triangle_points()
         
@@ -217,6 +243,7 @@ class BoostPad(Widget):
         super().__init__(**kwargs)
         self.size = (40, 20)
         self.pos = pos
+        self.initial_x = pos[0]  # Store initial x position
         with self.canvas:
             Color(1, 1, 0)  # Yellow color
             self.rect = Rectangle(pos=self.pos, size=self.size)
