@@ -20,8 +20,15 @@ class HomePage(Screen):
         settings_button.bind(on_press=self.go_to_settings)
         layout.add_widget(settings_button)
 
+        skin_button = Button(text='Select Skin 🎨', size_hint=(0.3, 0.1), pos_hint={'center_x': 0.5}, font_size='24sp')
+        skin_button.bind(on_press=self.go_to_skin_selector)
+        layout.add_widget(skin_button)
+
     def go_to_level_selection(self, instance):
         self.manager.current = 'stage_selection'
 
     def go_to_settings(self, instance):
         print("Settings button pressed")
+
+    def go_to_skin_selector(self, instance):
+        self.manager.current = 'skin_selector'
