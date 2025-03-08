@@ -12,11 +12,18 @@
             size_hint_y: 0.2
 
         Button:
-            text: 'Go to Play :arrow_right:'
+            text: 'Play'
             size_hint: 0.3, 0.1
             pos_hint: {'center_x': 0.5}
             font_size: '24sp'
             on_press: root.go_to_level_selection(self)
+        
+        Button:
+            text: 'Select Skin 🎨'
+            size_hint: 0.3, 0.1
+            pos_hint: {'center_x': 0.5}
+            font_size: '24sp'
+            on_press: root.go_to_skin_selector(self)
 
         Button:
             text: 'Settings'
