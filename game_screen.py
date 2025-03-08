@@ -15,7 +15,7 @@ import json
 
 class GameScreen(Screen):
     # Add this property
-    player_skin = StringProperty('assets/images/cube_5.png')  # Default skin
+    player_skin = StringProperty('assets/image/cube_5.png')  # Default skin
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
