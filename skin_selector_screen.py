@@ -3,7 +3,7 @@ from kivy.properties import StringProperty
 from kivy.app import App
 
 class SkinSelectorScreen(Screen):
-    selected_skin = StringProperty("assets/image/cube_5.png")  # Default skin
+    
 
     def select_skin(self, skin):
         self.selected_skin = skin
