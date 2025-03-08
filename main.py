@@ -15,7 +15,7 @@ Builder.load_file('kv/skin_selector.kv')
 class MyApp(App):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.player_skin = "assets/image/cube_5.png"  # Default skin
+       
         
     def build(self):
         sm = ScreenManager()

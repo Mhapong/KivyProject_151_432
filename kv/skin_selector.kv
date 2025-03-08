@@ -10,46 +10,266 @@
             font_size: '24sp'
             size_hint_y: None
             height: 50
-
-        # GridLayout for skin buttons
-        GridLayout:
-            cols: 2
-            spacing: 10
-            size_hint_y: 0.8  # Take up 80% of the vertical space
-
-            # Hardcoded skin buttons with images
-            Button:
+            
+        # Preview of selected skin
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 0.2
+            
+            Label:
+                text: "Current Selection"
+                font_size: '18sp'
+                size_hint_y: None
+                height: 30
+                
+            Image:
+                id: skin_preview
+                source: root.selected_skin
                 size_hint: None, None
-                size: 200, 200
-                background_normal: 'assets/image/cube_5.png'
-                on_release: root.select_skin('assets/image/cube_5.png')
-                Image:
-                    source: 'assets/image/cube_5.png'
-                    size: 200, 200
-                    allow_stretch: True
-                    keep_ratio: True
+                size: 100, 100
+                pos_hint: {'center_x': 0.5}
+                allow_stretch: True
+                keep_ratio: True
 
-            Button:
-                size_hint: None, None
-                size: 200, 200
-                background_normal: 'assets/image/cube_56.png'
-                on_release: root.select_skin('assets/image/cube_56.png')
-                Image:
-                    source: 'assets/image/cube_56.png'
-                    size: 200, 200
-                    allow_stretch: True
-                    keep_ratio: True
+        # ScrollView for GridLayout to enable scrolling
+        ScrollView:
+            size_hint_y: 0.6
+            do_scroll_x: False  # Only vertical scrolling
+            do_scroll_y: True
+            bar_width: 10
+            bar_color: [0.7, 0.7, 0.7, 0.9]  # Light gray scroll bar
+            bar_inactive_color: [0.7, 0.7, 0.7, 0.2]  # Transparent when not scrolling
+            effect_cls: "ScrollEffect"  # Simple scroll effect
+            scroll_type: ['bars', 'content']  # Allow both bar and content scrolling
+            
+            # GridLayout for skin buttons
+            GridLayout:
+                cols: 5
+                spacing: 10
+                size_hint_y: None
+                height: self.minimum_height  # Important for scrolling
+                row_default_height: 160  # Slightly larger than button size for spacing
+                col_default_width: 160
+                
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_1.png'
+                    on_release: root.select_skin('assets/image/cube_1.png')
+                    Image:
+                        source: 'assets/image/cube_1.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
 
-            Button:
-                size_hint: None, None
-                size: 200, 200
-                background_normal: 'assets/image/cube_85.png'
-                on_release: root.select_skin('assets/image/cube_85.png')
-                Image:
-                    source: 'assets/image/cube_85.png'
-                    size: 200, 200
-                    allow_stretch: True
-                    keep_ratio: True
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_2.png'
+                    on_release: root.select_skin('assets/image/cube_2.png')
+                    Image:
+                        source: 'assets/image/cube_2.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_3.png'
+                    on_release: root.select_skin('assets/image/cube_3.png')
+                    Image:
+                        source: 'assets/image/cube_3.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_4.png'
+                    on_release: root.select_skin('assets/image/cube_4.png')
+                    Image:
+                        source: 'assets/image/cube_4.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_5.png'
+                    on_release: root.select_skin('assets/image/cube_5.png')
+                    Image:
+                        source: 'assets/image/cube_5.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_6.png'
+                    on_release: root.select_skin('assets/image/cube_6.png')
+                    Image:
+                        source: 'assets/image/cube_6.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_7.png'
+                    on_release: root.select_skin('assets/image/cube_7.png')
+                    Image:
+                        source: 'assets/image/cube_7.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_8.png'
+                    on_release: root.select_skin('assets/image/cube_8.png')
+                    Image:
+                        source: 'assets/image/cube_8.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_9.png'
+                    on_release: root.select_skin('assets/image/cube_9.png')
+                    Image:
+                        source: 'assets/image/cube_9.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_10.png'
+                    on_release: root.select_skin('assets/image/cube_10.png')
+                    Image:
+                        source: 'assets/image/cube_10.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_11.png'
+                    on_release: root.select_skin('assets/image/cube_11.png')
+                    Image:
+                        source: 'assets/image/cube_11.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_12.png'
+                    on_release: root.select_skin('assets/image/cube_12.png')
+                    Image:
+                        source: 'assets/image/cube_12.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_13.png'
+                    on_release: root.select_skin('assets/image/cube_13.png')
+                    Image:
+                        source: 'assets/image/cube_12.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_14.png'
+                    on_release: root.select_skin('assets/image/cube_14.png')
+                    Image:
+                        source: 'assets/image/cube_12.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+                
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_15.png'
+                    on_release: root.select_skin('assets/image/cube_15.png')
+                    Image:
+                        source: 'assets/image/cube_12.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+                
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_16.png'
+                    on_release: root.select_skin('assets/image/cube_16.png')
+                    Image:
+                        source: 'assets/image/cube_12.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+                
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_17.png'
+                    on_release: root.select_skin('assets/image/cube_17.png')
+                    Image:
+                        source: 'assets/image/cube_12.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+                
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_18.png'
+                    on_release: root.select_skin('assets/image/cube_18.png')
+                    Image:
+                        source: 'assets/image/cube_12.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+                
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_19.png'
+                    on_release: root.select_skin('assets/image/cube_19.png')
+                    Image:
+                        source: 'assets/image/cube_12.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
+                
+                Button:
+                    size_hint: None, None
+                    size: 150, 150
+                    background_normal: 'assets/image/cube_20.png'
+                    on_release: root.select_skin('assets/image/cube_20.png')
+                    Image:
+                        source: 'assets/image/cube_12.png'
+                        size: 150, 150
+                        allow_stretch: True
+                        keep_ratio: True
 
         # Back Button
         Button:
