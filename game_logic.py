@@ -6,9 +6,12 @@ from kivy.properties import NumericProperty, BooleanProperty
 from kivy.animation import Animation
 
 class Player(Image):
+    velocity = NumericProperty(0)
+    jump_strength = 12
+    on_ground = BooleanProperty(True)
     rotation = NumericProperty(0)
-    velocity_y = NumericProperty(0)
-    
+    moving_speed = NumericProperty(200)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.gravity = -1200
@@ -18,41 +21,52 @@ class Player(Image):
         self.is_jumping = False
         
     def update(self, dt, obstacles=None):
-        # อัพเดทการเคลื่อนที่
-        self.velocity_y += self.gravity * dt
-        self.y += self.velocity_y * dt
-        
+        self.y += self.velocity
+        self.velocity -= 0.5
+
         if self.is_jumping:
-            self.rotation += 360 * dt  # เพิ่มการหมุนตัว
-        
-        # เช็คการชนพื้น
+            self.rotation += 360 * dt  # เพิ่มการหมุนตัวละคร
+
+        for obstacle in obstacles:
+            if self.collide_widget(obstacle):
+                if isinstance(obstacle, BoostPad):
+                    self.velocity = self.jump_strength * 1.5
+                    self.on_ground = False
+                else:
+                    return True
+
         if self.y < 100:
             self.y = 100
-            self.velocity_y = 0
+            self.velocity = 0
+            self.on_ground = True
             self.is_jumping = False
             self.rotation = 0
-            
-        # เช็คการชนกับสิ่งกีดขวาง
-        if obstacles:
-            for obstacle in obstacles:
-                if self.collide_widget(obstacle):
-                    if isinstance(obstacle, BoostPad):
-                        self.velocity_y = self.jump_speed * 1.5  # เพิ่มความเร็วในการกระโดด
-                        self.is_jumping = True
-                    else:
-                        return True
+
         return False
             
     def jump(self):
-        if not self.is_jumping:
-            self.velocity_y = self.jump_speed
-            self.is_jumping = True
+        if self.on_ground:
+            self.velocity = self.jump_strength
+            self.on_ground = False
+            self.is_jumping = True  # เริ่มการหมุนตัวละคร
 
     def die(self):
-        # เพิ่มเอฟเฟกต์การตาย
         anim = Animation(opacity=0, duration=0.5) + Animation(opacity=1, duration=0.5)
         anim.repeat = True
         anim.start(self)
+
+    def reset_position(self):
+        self.pos = (100, 100)
+        self.velocity = 0
+
+    def stop(self):
+        self.velocity = 0
+    
+    def on_death(self):
+        self.stop()
+        anim = Animation(opacity=0, duration=1) + Animation(opacity=1, duration=1)
+        anim.start(self)
+    
 
 class Spike(Widget):
     def __init__(self, pos, **kwargs):

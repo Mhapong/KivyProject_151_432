@@ -2,8 +2,7 @@
   "finish_x": 1800,
   "background": "assets/image/map_3.jpg",
   "obstacles": [
-    { "type": "spike", "x": 200, "y": 100 },
-    { "type": "boost_pad", "x": 400, "y": 120 },
+    { "type": "boost_pad", "x": 400, "y": 100 },
     { "type": "spike", "x": 700, "y": 100 },
     { "type": "boost_pad", "x": 1000, "y": 120 },
     { "type": "spike", "x": 1300, "y": 100 }

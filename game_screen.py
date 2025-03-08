@@ -4,8 +4,12 @@ from kivy.graphics import Rectangle, Color
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.lang import Builder
-from game_logic import Player, FinishLine, Floor, Platform, Spike, BoostPad
-import random
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
+from kivy.uix.button import Button
+from kivy.uix.boxlayout import BoxLayout
+from kivy.core.audio import SoundLoader
+from game_logic import Player, Floor, Platform, Spike, BoostPad, FinishLine
 import json
 
 Builder.load_file('kv/game.kv')
@@ -32,8 +36,12 @@ class GameScreen(Screen):
         Window.bind(on_key_down=self._on_key_down)
         Window.bind(on_mouse_down=self._on_mouse_down)
         
+        # Load sounds
+        self.death_sound = SoundLoader.load('assets/sounds/death.wav')
+        self.game_over_music = SoundLoader.load('assets/sounds/game_over.mp3')
+        
         # Start game loop
-        Clock.schedule_interval(self.update, 1.0/60.0)
+        self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)
     
     def update(self, dt):
         # Move platforms and obstacles to the left
@@ -68,12 +76,80 @@ class GameScreen(Screen):
     
     def game_over(self):
         print("Game Over!")
-        self.player.die()  # เพิ่มการเรียกใช้ฟังก์ชัน die() ของ player
-        Clock.schedule_once(self.go_to_stage_selection, 1)  # รอ 1 วินาทีก่อนเปลี่ยนหน้าจอ
+        self.player.on_death()  # เรียกฟังก์ชัน on_death ของตัวละคร
+        self.stop_game()  # หยุดการเคลื่อนไหวทั้งหมด
+        self.show_game_over_popup()
+        
+    def stop_game(self):
+        self.game_loop.cancel()  # หยุดการอัปเดตฟังก์ชัน Clock.schedule_interval
+        self.player.stop()  # หยุดการเคลื่อนที่ของตัวละคร
+        if self.death_sound:
+            self.death_sound.play()  # เล่นเสียงการตาย
+        if self.game_over_music:
+            self.game_over_music.play()  # เล่นเพลง Game Over
         
     def level_complete(self):
         print("Level Complete!")
+        self.stop_game()
+        self.show_level_complete_popup()
+        
+    def show_game_over_popup(self):
+        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        label = Label(text="Game Over!")
+        retry_button = Button(text="Retry", size_hint=(1, 0.2))
+        retry_button.bind(on_press=self.retry_level)
+        back_button = Button(text="Back to Stage Selection", size_hint=(1, 0.2))
+        back_button.bind(on_press=self.go_to_stage_selection)
+        layout.add_widget(label)
+        layout.add_widget(retry_button)
+        layout.add_widget(back_button)
+        self.popup = Popup(title="Game Over", content=layout, size_hint=(0.5, 0.5))
+        self.popup.open()
+        
+    def show_level_complete_popup(self):
+        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        label = Label(text="Level Complete!")
+        next_button = Button(text="Next Level", size_hint=(1, 0.2))
+        next_button.bind(on_press=self.go_to_next_level)
+        back_button = Button(text="Back to Stage Selection", size_hint=(1, 0.2))
+        back_button.bind(on_press=self.go_to_stage_selection)
+        layout.add_widget(label)
+        layout.add_widget(next_button)
+        layout.add_widget(back_button)
+        self.popup = Popup(title="Congratulations!", content=layout, size_hint=(0.5, 0.5))
+        self.popup.open()
+        
+    def retry_level(self, instance):
+        self.player.reset_position()  # รีเซ็ตตำแหน่งของตัวละคร
+        self.setup_level()  # เรียกใช้ฟังก์ชัน setup_level เพื่อเริ่มเกมใหม่
+        self.popup.dismiss()
+        self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)  # รีสตาร์ทการเลื่อนฉาก
+        
+    def go_to_next_level(self, instance):
+        current_level = int(self.level_file.split('level')[1].split('.json')[0])
+        next_level = current_level + 1
+        next_level_file = f"assets/levels/level{next_level}.json"
+        try:
+            with open(next_level_file, 'r') as f:
+                self.level_file = next_level_file
+                self.setup_level()
+                self.manager.current = 'game'
+                self.popup.dismiss()
+                self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)  # รีสตาร์ทการเลื่อนฉาก
+        except FileNotFoundError:
+            print(f"Level {next_level} not found.")
+            self.manager.current = 'stage_selection'
+            self.popup.dismiss()
+        
+    def go_to_stage_selection(self, instance=None):
         self.manager.current = 'stage_selection'
+        if hasattr(self, 'popup'):
+            self.popup.dismiss()
+        
+    def go_to_home(self, instance):
+        self.manager.current = 'home'
+        if hasattr(self, 'popup'):
+            self.popup.dismiss()
         
     def on_enter(self):
         self.setup_level()
@@ -143,9 +219,9 @@ class GameScreen(Screen):
         for platform in self.platforms:
             if self.check_collision(player_rect, [platform.pos[0], platform.pos[1],
                                                 platform.size[0], platform.size[1]]):
-                if self.player.velocity_y < 0:  # ถ้ากำลังตกลงมา
+                if self.player.velocity < 0:  # ถ้ากำลังตกลงมา
                     self.player.pos = (self.player.pos[0], platform.pos[1] + platform.size[1])
-                    self.player.velocity_y = 0
+                    self.player.velocity = 0
                     self.player.is_jumping = False
                     self.player.rotation = 0
                     
@@ -154,6 +230,3 @@ class GameScreen(Screen):
                 rect1[0] + rect1[2] > rect2[0] and
                 rect1[1] < rect2[1] + rect2[3] and
                 rect1[1] + rect2[3] > rect2[1])
-    
-    def go_to_stage_selection(self, dt):
-        self.manager.current = 'stage_selection'

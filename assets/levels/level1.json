@@ -3,6 +3,7 @@
   "finish_x": 1200,
   "background": "assets/image/map_1.jpg",
   "platforms": [
+    { "pos": [-100, 0], "size": [100, 400] },
     { "pos": [400, 200], "size": [100, 50] },
     { "pos": [600, 300], "size": [100, 40] },
     { "pos": [800, 250], "size": [100, 20] },
@@ -15,7 +16,6 @@
     { "pos": [2200, 300], "size": [100, 20] }
   ],
   "obstacles": [
-    { "type": "spike", "x": 400, "y": 100 },
     { "type": "boost_pad", "x": 600, "y": 120 },
     { "type": "spike", "x": 900, "y": 100 },
     { "type": "spike", "x": 1300, "y": 100 },
