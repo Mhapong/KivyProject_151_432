@@ -12,7 +12,7 @@
             size_hint_y: 0.2
 
         Button:
-            text: 'Go to Play ➡️'
+            text: 'Go to Play :arrow_right:'
             size_hint: 0.3, 0.1
             pos_hint: {'center_x': 0.5}
             font_size: '24sp'
@@ -24,3 +24,10 @@
             pos_hint: {'center_x': 0.5}
             font_size: '24sp'
             on_press: root.go_to_settings(self)
+        
+        Button:
+            text: 'Exit'
+            size_hint: 0.3, 0.1
+            pos_hint: {'center_x': 0.5}
+            font_size: '24sp'
+            on_press: app.stop()

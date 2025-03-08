@@ -31,6 +31,7 @@ class GameScreen(Screen):
         # Initialize lists
         self.obstacles = []
         self.platforms = []
+        self.finish_lines = []  # สร้าง list สำหรับเก็บเส้นชัย
         
         # Setup keyboard and mouse
         Window.bind(on_key_down=self._on_key_down)
@@ -44,7 +45,7 @@ class GameScreen(Screen):
         self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)
     
     def update(self, dt):
-        # Move platforms and obstacles to the left
+        # Move platforms, obstacles, and finish line to the left
         for platform in self.platforms:
             platform.x -= self.player.moving_speed * dt
             if platform.right < 0:
@@ -57,14 +58,21 @@ class GameScreen(Screen):
                 self.obstacles.remove(obstacle)
                 self.game_world.remove_widget(obstacle)
 
-        if self.player.update(dt, self.obstacles):
+        # เคลื่อนที่เส้นชัยไปทางซ้าย
+        for finish_line in self.finish_lines:
+            finish_line.x -= self.player.moving_speed * dt
+
+        # Update player and check collisions
+        player_died = self.player.update(dt, self.obstacles, self.platforms)
+        if player_died:
             self.game_over()
             return
 
-        self.check_platform_collisions()
-        
-        if hasattr(self, 'finish_line_x') and self.player.world_x >= self.finish_line_x:
-            self.level_complete()
+        # ตรวจสอบการชนกับเส้นชัย
+        for finish_line in self.finish_lines:
+            if finish_line.check_collision(self.player):
+                self.level_complete()
+                return
     
     def _on_key_down(self, instance, keyboard, keycode, text, modifiers):
         if keycode == 32:  # Spacebar
@@ -126,18 +134,28 @@ class GameScreen(Screen):
         self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)  # รีสตาร์ทการเลื่อนฉาก
         
     def go_to_next_level(self, instance):
-        current_level = int(self.level_file.split('level')[1].split('.json')[0])
-        next_level = current_level + 1
-        next_level_file = f"assets/levels/level{next_level}.json"
         try:
-            with open(next_level_file, 'r') as f:
-                self.level_file = next_level_file
-                self.setup_level()
-                self.manager.current = 'game'
+            # Extract level number more robustly using os.path
+            import os
+            level_file_name = os.path.basename(self.level_file)  # Get just the filename
+            current_level = int(''.join(filter(str.isdigit, level_file_name)))  # Extract digits
+            next_level = current_level + 1
+            next_level_file = f"assets/levels/level{next_level}.json"
+            
+            try:
+                with open(next_level_file, 'r') as f:
+                    self.level_file = next_level_file
+                    self.setup_level()
+                    self.manager.current = 'game'
+                    self.popup.dismiss()
+                    self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)
+            except FileNotFoundError:
+                print(f"Level {next_level} not found.")
+                self.manager.current = 'stage_selection'
                 self.popup.dismiss()
-                self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)  # รีสตาร์ทการเลื่อนฉาก
-        except FileNotFoundError:
-            print(f"Level {next_level} not found.")
+                
+        except (ValueError, AttributeError) as e:
+            print(f"Error parsing level number: {e}")
             self.manager.current = 'stage_selection'
             self.popup.dismiss()
         
@@ -201,10 +219,16 @@ class GameScreen(Screen):
                     self.obstacles.append(obstacle)
                     self.game_world.add_widget(obstacle)
             
-            # สร้างเส้นชัย
-            self.finish_line_x = self.level_data['finish_x']
-            self.finish_line = FinishLine(pos=(self.finish_line_x, 0))
-            self.game_world.add_widget(self.finish_line)
+            # ลบเส้นชัยเก่า
+            for finish_line in self.finish_lines:
+                self.game_world.remove_widget(finish_line)
+            self.finish_lines.clear()
+            
+            # สร้างเส้นชัยใหม่
+            finish_x = self.level_data['finish_x']
+            finish_line = FinishLine(pos=(finish_x, 0))
+            self.finish_lines.append(finish_line)
+            self.game_world.add_widget(finish_line)
         except FileNotFoundError:
             print(f"Level file not found: {level_file}")
         except json.JSONDecodeError:
