@@ -1,6 +1,6 @@
 from kivy.uix.widget import Widget
 from kivy.uix.image import Image
-from kivy.graphics import Rectangle, Color, Triangle
+from kivy.graphics import Rectangle, Color, Triangle, Line
 from kivy.core.window import Window
 from kivy.properties import NumericProperty, BooleanProperty
 from kivy.animation import Animation
@@ -225,22 +225,59 @@ class BoostPad(Widget):
     def _update_rect(self, *args):
         self.rect.pos = self.pos
 
+from kivy.core.window import Window
+
 class FinishLine(Widget):
     def __init__(self, pos, **kwargs):
         super().__init__(**kwargs)
         self.size = (50, Window.height)
         self.pos = pos
         with self.canvas:
-            Color(0, 1, 0)  # Green color
+            # More vibrant color
+            Color(0, 1, 0.5, 0.7)  # Brighter green with higher opacity
             self.rect = Rectangle(pos=self.pos, size=self.size)
+            
+            # Add checkered pattern for better visibility
+            Color(1, 1, 1, 0.9)  # White checkers
+            checker_size = 25
+            for y in range(0, int(Window.height), checker_size*2):
+                for i in range(int(Window.height/checker_size/2)):
+                    Rectangle(pos=(self.pos[0], y + i*checker_size*2), 
+                            size=(checker_size, checker_size))
+                    Rectangle(pos=(self.pos[0] + checker_size, y + checker_size + i*checker_size*2),
+                            size=(checker_size, checker_size))
+            
+            # Bold border
+            Color(0, 0, 0, 1)  # Black border
+            Line(rectangle=(self.pos[0], self.pos[1], self.size[0], self.size[1]), width=3)
+        
         self.bind(pos=self._update_rect, size=self._update_rect)
-
+        
     def _update_rect(self, *args):
-        self.rect.pos = self.pos
-        self.rect.size = self.size
+        # This will fail without resetting the canvas
+        # Need to redraw all elements when position changes
+        self.canvas.clear()
+        with self.canvas:
+            Color(0, 1, 0.5, 0.7)
+            self.rect = Rectangle(pos=self.pos, size=self.size)
+            
+            Color(1, 1, 1, 0.9)
+            checker_size = 25
+            for y in range(0, int(Window.height), checker_size*2):
+                for i in range(int(Window.height/checker_size/2)):
+                    Rectangle(pos=(self.pos[0], y + i*checker_size*2), 
+                            size=(checker_size, checker_size))
+                    Rectangle(pos=(self.pos[0] + checker_size, y + checker_size + i*checker_size*2),
+                            size=(checker_size, checker_size))
+            
+            Color(0, 0, 0, 1)
+            Line(rectangle=(self.pos[0], self.pos[1], self.size[0], self.size[1]), width=3)
 
     def check_collision(self, player):
-        if self.collide_widget(player):
+        # Improved collision detection with overlap threshold
+        collision_margin = 10  # pixels of overlap required
+        if (player.right > self.x + collision_margin and 
+            player.x < self.right - collision_margin):
             return True
         return False
 
