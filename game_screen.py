@@ -9,12 +9,14 @@ from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
 from kivy.core.audio import SoundLoader
+from kivy.properties import StringProperty  # Add this import
 from game_logic import Player, Floor, Platform, Spike, BoostPad, FinishLine
 import json
 
-Builder.load_file('kv/game.kv')
-
 class GameScreen(Screen):
+    # Add this property
+    player_skin = StringProperty('assets/images/cube_5.png')  # Default skin
+    
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
@@ -43,6 +45,7 @@ class GameScreen(Screen):
         # Start game loop
         self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)
     
+    # Rest of your methods remain unchanged
     def update(self, dt):
         # Move platforms and obstacles to the left
         for platform in self.platforms:
@@ -76,17 +79,17 @@ class GameScreen(Screen):
     
     def game_over(self):
         print("Game Over!")
-        self.player.on_death()  # เรียกฟังก์ชัน on_death ของตัวละคร
-        self.stop_game()  # หยุดการเคลื่อนไหวทั้งหมด
+        self.player.on_death()
+        self.stop_game()
         self.show_game_over_popup()
         
     def stop_game(self):
-        self.game_loop.cancel()  # หยุดการอัปเดตฟังก์ชัน Clock.schedule_interval
-        self.player.stop()  # หยุดการเคลื่อนที่ของตัวละคร
+        self.game_loop.cancel()
+        self.player.stop()
         if self.death_sound:
-            self.death_sound.play()  # เล่นเสียงการตาย
+            self.death_sound.play()
         if self.game_over_music:
-            self.game_over_music.play()  # เล่นเพลง Game Over
+            self.game_over_music.play()
         
     def level_complete(self):
         print("Level Complete!")
@@ -120,10 +123,10 @@ class GameScreen(Screen):
         self.popup.open()
         
     def retry_level(self, instance):
-        self.player.reset_position()  # รีเซ็ตตำแหน่งของตัวละคร
-        self.setup_level()  # เรียกใช้ฟังก์ชัน setup_level เพื่อเริ่มเกมใหม่
+        self.player.reset_position()
+        self.setup_level()
         self.popup.dismiss()
-        self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)  # รีสตาร์ทการเลื่อนฉาก
+        self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)
         
     def go_to_next_level(self, instance):
         current_level = int(self.level_file.split('level')[1].split('.json')[0])
@@ -135,7 +138,7 @@ class GameScreen(Screen):
                 self.setup_level()
                 self.manager.current = 'game'
                 self.popup.dismiss()
-                self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)  # รีสตาร์ทการเลื่อนฉาก
+                self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)
         except FileNotFoundError:
             print(f"Level {next_level} not found.")
             self.manager.current = 'stage_selection'
@@ -158,8 +161,8 @@ class GameScreen(Screen):
         # Load the level file specified in the start_game method
         if hasattr(self, 'level_file'):
             self.load_level(self.level_file)
-        self.player.pos = (100, 100)  # เริ่มต้นที่พื้น
-        self.player.world_x = 0  # Reset world_x
+        self.player.pos = (100, 100)
+        self.player.world_x = 0
     
     def load_level(self, level_file):
         try:
@@ -170,12 +173,12 @@ class GameScreen(Screen):
             if 'background' in self.level_data:
                 self.ids.background.source = self.level_data['background']
                 
-            # ลบ platforms เก่า
+            # Remove old platforms
             for platform in self.platforms:
                 self.game_world.remove_widget(platform)
             self.platforms.clear()
             
-            # สร้าง platforms ใหม่
+            # Create new platforms
             if 'platforms' in self.level_data:
                 for platform_data in self.level_data['platforms']:
                     pos = platform_data['pos']
@@ -184,12 +187,12 @@ class GameScreen(Screen):
                     self.platforms.append(platform)
                     self.game_world.add_widget(platform)
             
-            # ลบ obstacles เก่า
+            # Remove old obstacles
             for obstacle in self.obstacles:
                 self.game_world.remove_widget(obstacle)
             self.obstacles.clear()
             
-            # สร้าง obstacles ใหม่
+            # Create new obstacles
             if 'obstacles' in self.level_data:
                 for obstacle_data in self.level_data['obstacles']:
                     if obstacle_data['type'] == 'spike':
@@ -201,7 +204,7 @@ class GameScreen(Screen):
                     self.obstacles.append(obstacle)
                     self.game_world.add_widget(obstacle)
             
-            # สร้างเส้นชัย
+            # Create finish line
             self.finish_line_x = self.level_data['finish_x']
             self.finish_line = FinishLine(pos=(self.finish_line_x, 0))
             self.game_world.add_widget(self.finish_line)
@@ -219,7 +222,7 @@ class GameScreen(Screen):
         for platform in self.platforms:
             if self.check_collision(player_rect, [platform.pos[0], platform.pos[1],
                                                 platform.size[0], platform.size[1]]):
-                if self.player.velocity < 0:  # ถ้ากำลังตกลงมา
+                if self.player.velocity < 0:  # If falling
                     self.player.pos = (self.player.pos[0], platform.pos[1] + platform.size[1])
                     self.player.velocity = 0
                     self.player.is_jumping = False
