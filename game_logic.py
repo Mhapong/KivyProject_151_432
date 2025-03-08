@@ -8,29 +8,29 @@ import random
 
 class Player(Image):
     velocity = NumericProperty(0)
-    jump_strength = NumericProperty(700)  # Make this a property
+    jump_strength = NumericProperty(700)
     on_ground = BooleanProperty(True)
     rotation = NumericProperty(0)
-    moving_speed = NumericProperty(500)  # Fixed speed
+    moving_speed = NumericProperty(500)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.gravity = -1500  # Increased gravity for snappier jumps
-        self.jump_strength = 800  # Increased jump strength
+        self.gravity = -1500
+        self.jump_strength = 800
         self.velocity = 0
         self.moving_speed = 500
         self.world_x = 0
         self.is_jumping = False
         self.on_ground = True
         self.rotation = 0
-        self.rotation_speed = 450  # Increased rotation speed
-        self.target_rotation = 0
+        self.jump_height = 0  # Track jump height for rotation calculation
+        self.max_jump_height = 0  # Track maximum jump height
         self.opacity = 1
         self.original_source = kwargs.get('source', '')
         self.source = self.original_source
 
     def update(self, dt, obstacles=None, platforms=None, finish_line=None):
-        # Update vertical position with improved physics
+        # Update vertical position with physics
         self.velocity += self.gravity * dt
         
         # Terminal velocity to prevent falling too fast
@@ -39,26 +39,21 @@ class Player(Image):
             
         self.y += self.velocity * dt
 
-        # Smooth rotation during jump
-        if self.is_jumping:
-            # Calculate rotation based on jump arc
-            jump_progress = abs(self.velocity) / self.jump_strength
-            rotation_this_frame = self.rotation_speed * dt
+        # Geometry Dash style rotation - always rotate clockwise during jumps
+        if not self.on_ground:
+            # Determine rotation speed based on jump arc
+            # Higher speed at beginning and end of jump, slower at peak
+            jump_height_factor = abs(self.velocity) / self.jump_strength
+            base_rotation_speed = 360  # Degrees per second
+            rotation_speed = base_rotation_speed * (0.5 + jump_height_factor)
             
-            # Adjust rotation speed based on jump progress
-            if self.velocity > 0:  # Going up
-                rotation_this_frame *= (1 - jump_progress * 0.3)
-            else:  # Going down
-                rotation_this_frame *= (1 + jump_progress * 0.3)
+            # Apply rotation
+            self.rotation += rotation_speed * dt
             
-            self.rotation += rotation_this_frame
-            self.rotation = self.rotation % 360
-
-        # Snap rotation when landing
-        if self.on_ground:
-            target_angle = round(self.rotation / 90) * 90
-            self.rotation = target_angle
-
+            # Keep rotation between 0-360
+            if self.rotation >= 360:
+                self.rotation -= 360
+        
         # Death condition
         if self.y < 0:
             return True
@@ -70,24 +65,30 @@ class Player(Image):
                     if obstacle.collide_with_player(self):
                         return True
                 elif isinstance(obstacle, BoostPad) and self.collide_widget(obstacle):
-                    # More dramatic boost effect
-                    self.velocity = self.jump_strength * 1.8
+                    # Boost effect - higher jump
+                    self.velocity = self.jump_strength * 1.5
                     self.on_ground = False
                     self.is_jumping = True
-                    self.rotation = 0  # Reset rotation for boost
 
+        # Platform collision
         if platforms:
+            on_platform = False
             for platform in platforms:
-                if self.collide_widget(platform):
-                    if self.velocity < 0:  # ถ้ากำลังตกลงมา
-                        self.y = platform.top
-                        self.velocity = 0
-                        self.on_ground = True
-                        self.is_jumping = False
-                        self.rotation = 0
+                if self.collide_widget(platform) and self.velocity < 0:  # Only check when falling
+                    self.y = platform.top
+                    self.velocity = 0
+                    self.on_ground = True
+                    self.is_jumping = False
+                    
+                    # Snap to nearest 90 degrees when landing
+                    target_angle = round(self.rotation / 90) * 90
+                    self.rotation = target_angle
+                    on_platform = True
+                    break
 
-        if finish_line and self.collide_widget(finish_line):
-            return True
+        # Check finish line
+        if finish_line and isinstance(finish_line, FinishLine) and self.collide_widget(finish_line):
+            return "finish"
 
         return False
 
@@ -96,13 +97,11 @@ class Player(Image):
             self.velocity = self.jump_strength
             self.on_ground = False
             self.is_jumping = True
+            
+            # Don't reset rotation to 0, continue from current angle
+            # This makes multiple jumps look smoother
+            
             self.opacity = 1
-            
-            # Start rotation from current snapped position
-            current_angle = round(self.rotation / 90) * 90
-            self.rotation = current_angle
-            
-            # Ensure image is visible
             self.source = self.original_source
 
     def die(self):
@@ -116,6 +115,7 @@ class Player(Image):
         self.on_ground = True
         self.is_jumping = False
         self.rotation = 0
+        self.is_rotating = False
 
     def stop(self):
         self.velocity = 0

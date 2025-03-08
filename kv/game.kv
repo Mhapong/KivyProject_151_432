@@ -23,7 +23,8 @@
                 canvas.before:
                     PushMatrix
                     Rotate:
-                        angle: -self.rotation
+                        angle: -self.rotation  # Use positive rotation value
+                        axis: 0, 0, 1
                         origin: self.center
                 canvas.after:
                     PopMatrix
@@ -32,13 +33,4 @@
             Image:
                 id: ground1
                 source: 'assets/image/ground.png'
-                size_hint: None, None
-                size: 1280, 50
-                pos: 0, 0
-
-            Image:
-                id: ground2
-                source: 'assets/image/ground.png'
-                size_hint: None, None
-                size: 1280, 50
-                pos: 1280, 0
+               
