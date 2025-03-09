@@ -32,6 +32,7 @@ class GameScreen(Screen):
         self.obstacles = []
         self.platforms = []
         self.finish_lines = []
+        self.speed_portals = []  # Add this line
         
         # Setup keyboard and mouse
         Window.bind(on_key_down=self._on_key_down)
@@ -69,6 +70,19 @@ class GameScreen(Screen):
             if obstacle.right < 0:
                 self.obstacles.remove(obstacle)
                 self.game_world.remove_widget(obstacle)
+        
+        # Move speed portals and check for collision
+        for portal in self.speed_portals[:]:
+            portal.x -= self.player.moving_speed * dt
+            
+            # Check for collision with player
+            if self.player.collide_widget(portal):
+                print(f"Player entered speed portal: {portal.speed_multiplier}x")
+                self.player.moving_speed = 500 * portal.speed_multiplier  # Base speed * multiplier
+            
+            if portal.right < 0:
+                self.speed_portals.remove(portal)
+                self.game_world.remove_widget(portal)
         
         # Move finish lines
         for finish_line in self.finish_lines[:]:
@@ -328,6 +342,7 @@ class GameScreen(Screen):
             self.create_platforms()
             self.create_obstacles()
             self.create_finish_line()
+            self.create_speed_portals()  # Add this line
             
         except FileNotFoundError:
             print(f"Level file not found: {level_file}")
@@ -349,6 +364,11 @@ class GameScreen(Screen):
         for finish_line in self.finish_lines:
             self.game_world.remove_widget(finish_line)
         self.finish_lines.clear()
+        
+        # Remove old speed portals
+        for portal in self.speed_portals:
+            self.game_world.remove_widget(portal)
+        self.speed_portals.clear()
         
     def check_platform_collisions(self):
         on_platform = False
@@ -427,3 +447,11 @@ class GameScreen(Screen):
             print(f"Finish line added: {finish_line}, position: {finish_line.pos}")
         else:
             print("No finish_x in level data!")
+
+    def create_speed_portals(self):
+        if 'speed_portals' in self.level_data:
+            for portal_data in self.level_data['speed_portals']:
+                portal = SpeedPortal(pos=(portal_data['x'], 100), 
+                                    speed_multiplier=portal_data['speed'])
+                self.speed_portals.append(portal)
+                self.game_world.add_widget(portal)

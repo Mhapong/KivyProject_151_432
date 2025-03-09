@@ -340,3 +340,31 @@ class Platform(Widget):
 
     def _update_rect(self, *args):
         self.rect.pos = self.pos
+
+class SpeedPortal(Widget):
+    def __init__(self, pos, speed_multiplier=1.5, **kwargs):
+        super().__init__(**kwargs)
+        self.size = (40, 60)
+        self.pos = pos
+        self.speed_multiplier = speed_multiplier
+        self.initial_x = pos[0]
+        
+        # Color based on speed
+        if speed_multiplier < 1.0:
+            portal_color = (0, 0, 1)  # Blue for slower
+        elif speed_multiplier < 2.0:
+            portal_color = (1, 1, 0)  # Yellow for medium
+        else:
+            portal_color = (1, 0, 0)  # Red for faster
+        
+        with self.canvas:
+            Color(*portal_color)
+            self.rect = Rectangle(pos=self.pos, size=self.size)
+            # Add some details to make it look like a portal
+            Color(1, 1, 1, 0.5)  # White with transparency
+            Line(ellipse=(self.x + 5, self.y + 5, self.width - 10, self.height - 10), width=2)
+            
+        self.bind(pos=self._update_rect)
+    
+    def _update_rect(self, *args):
+        self.rect.pos = self.pos
