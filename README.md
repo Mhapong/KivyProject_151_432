@@ -1345,7 +1345,7 @@ def _calculate_triangle_points(self):
 
 ### คลาส BoostPad
 
-####คลาส BoostPad เป็นแพดบูสต์ที่ช่วยในการกระโดดให้สูงขึ้น
+#### คลาส BoostPad เป็นแพดบูสต์ที่ช่วยในการกระโดดให้สูงขึ้น
 
 ```python
 def __init__(self, pos, **kwargs):
@@ -1360,7 +1360,7 @@ def __init__(self, pos, **kwargs):
 
 ```
 
-###คลาส FinishLine
+### คลาส FinishLine
 
 - คลาส FinishLine คือเส้นชัยที่ผู้เล่นต้องไปให้ถึงเพื่อผ่านด่าน
 
@@ -1419,8 +1419,9 @@ def check_collision(self, player):
     return False
 ```
 
-###คลาส Platform
-####คลาส Platform เป็นแพลตฟอร์มที่ผู้เล่นสามารถยืนและเคลื่อนที่ไปได้
+### คลาส Platform
+
+#### คลาส Platform เป็นแพลตฟอร์มที่ผู้เล่นสามารถยืนและเคลื่อนที่ไปได้
 
 ```python
 def __init__(self, pos, size, **kwargs):
