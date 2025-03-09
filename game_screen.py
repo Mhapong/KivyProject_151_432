@@ -50,6 +50,9 @@ class GameScreen(Screen):
     
     # Rest of your methods remain unchanged
     def update(self, dt):
+        # Update player's world position
+        self.player.world_x += self.player.moving_speed * dt
+        
         # Move objects
         for platform in self.platforms[:]:  # Use slice to avoid modification during iteration
             platform.x -= self.player.moving_speed * dt
@@ -152,30 +155,42 @@ class GameScreen(Screen):
     def show_game_over_popup(self):
         layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
         label = Label(text="Game Over!")
+        
         retry_button = Button(text="Retry", size_hint=(1, 0.2))
-        retry_button.bind(on_press=self.retry_level)
+        retry_button.bind(on_release=self.retry_level)  # Use on_release instead of on_press
+        
         back_button = Button(text="Back to Stage Selection", size_hint=(1, 0.2))
-        back_button.bind(on_press=self.go_to_stage_selection)
+        back_button.bind(on_release=self.go_to_stage_selection)  # Use on_release
+        
         layout.add_widget(label)
         layout.add_widget(retry_button)
         layout.add_widget(back_button)
-        self.popup = Popup(title="Game Over", content=layout, size_hint=(0.5, 0.5))
+        
+        self.popup = Popup(title="Game Over", content=layout, size_hint=(0.5, 0.5), auto_dismiss=False)
         self.popup.open()
         
     def show_level_complete_popup(self):
         layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
         label = Label(text="Level Complete!")
+        
         next_button = Button(text="Next Level", size_hint=(1, 0.2))
-        next_button.bind(on_press=self.go_to_next_level)
+        next_button.bind(on_release=self.go_to_next_level)  # Use on_release
+        
         back_button = Button(text="Back to Stage Selection", size_hint=(1, 0.2))
-        back_button.bind(on_press=self.go_to_stage_selection)
+        back_button.bind(on_release=self.go_to_stage_selection)  # Use on_release
+        
         layout.add_widget(label)
         layout.add_widget(next_button)
         layout.add_widget(back_button)
-        self.popup = Popup(title="Congratulations!", content=layout, size_hint=(0.5, 0.5))
+        
+        self.popup = Popup(title="Congratulations!", content=layout, size_hint=(0.5, 0.5), auto_dismiss=False)
         self.popup.open()
         
     def retry_level(self, instance):
+        if hasattr(self, 'popup') and self.popup:
+            self.popup.dismiss()  # Dismiss popup first
+            self.popup = None  # Set to None to ensure it's fully cleared
+        
         if self.game_loop:
             self.game_loop.cancel()
             self.game_loop = None
@@ -202,9 +217,14 @@ class GameScreen(Screen):
         
         # Start new game loop
         self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)
-        self.popup.dismiss()
+        if self.background_music:
+            self.background_music.play()
         
     def go_to_next_level(self, instance):
+        if hasattr(self, 'popup') and self.popup:
+            self.popup.dismiss()
+            self.popup = None  # Set to None to ensure it's fully cleared
+        
         try:
             level_file_name = os.path.basename(self.level_file)
             current_level = int(''.join(filter(str.isdigit, level_file_name)))
@@ -223,28 +243,25 @@ class GameScreen(Screen):
                     self.level_file = next_level_file
                     self.setup_level()
                     self.manager.current = 'game'
-                    if hasattr(self, 'popup'):
-                        self.popup.dismiss()
                     
             except FileNotFoundError:
                 print(f"Level {next_level} not found.")
                 self.manager.current = 'stage_selection'
-                if hasattr(self, 'popup'):
-                    self.popup.dismiss()
                 
         except (ValueError, AttributeError) as e:
             print(f"Error parsing level number: {e}")
             self.manager.current = 'stage_selection'
-            if hasattr(self, 'popup'):
-                self.popup.dismiss()
         
     def go_to_stage_selection(self, instance=None):
+        if hasattr(self, 'popup') and self.popup:
+            self.popup.dismiss()
+            self.popup = None  # Set to None to ensure it's fully cleared
+        
         if self.game_loop:
             self.game_loop.cancel()
             self.game_loop = None
+        Clock.unschedule(self.update)
         self.manager.current = 'stage_selection'
-        if hasattr(self, 'popup'):
-            self.popup.dismiss()
         
     def go_to_home(self, instance):
         self.manager.current = 'home'
@@ -267,13 +284,13 @@ class GameScreen(Screen):
                 # Position player at proper height
                 if self.platforms:
                     first_platform = self.platforms[0]
-                    self.player.pos = (100, first_platform.top + 10)
+                    # Ensure player is positioned well above the platform to prevent immediate collision
+                    self.player.pos = (100, first_platform.top + 20)  # Increased padding
                     # Explicitly set the player to be on ground
-                    print("Setting player on ground at level start")
                     self.player.on_ground = True
                     self.player.velocity = 0
                 else:
-                    self.player.pos = (100, 100)
+                    self.player.pos = (100, 150)  # Higher default position
                 
                 # Reset player state
                 self.player.world_x = 0
