@@ -1,7 +1,7 @@
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
-from kivy.uix.image import Image  # Add this import
-from kivy.graphics import Rectangle, Color
+from kivy.uix.image import Image
+from kivy.graphics import Rectangle, Color, RoundedRectangle, Line
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.lang import Builder
@@ -9,12 +9,15 @@ from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.floatlayout import FloatLayout
 from kivy.core.audio import SoundLoader
-from kivy.properties import StringProperty, NumericProperty, BooleanProperty  # Add these imports
-from kivy.animation import Animation  # Add this import
+from kivy.properties import StringProperty, NumericProperty, BooleanProperty
+from kivy.animation import Animation
+from kivy.metrics import dp
 from game_logic import Player, Floor, Platform, Spike, BoostPad, FinishLine
 import json
-import os  # Add this import
+import os
+import random
 
 class GameScreen(Screen):
     # Add these properties
@@ -183,38 +186,502 @@ class GameScreen(Screen):
             self.manager.current = 'stage_selection'
         
     def show_game_over_popup(self):
-        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
-        label = Label(text="Game Over!")
+        # Create a FloatLayout for the popup content
+        content = FloatLayout()
         
-        retry_button = Button(text="Retry", size_hint=(1, 0.2))
-        retry_button.bind(on_release=self.retry_level)  # Use on_release instead of on_press
+        # Add a semi-transparent background
+        with content.canvas.before:
+            Color(0, 0, 0, 0.8)
+            Rectangle(pos=(0, 0), size=Window.size)
         
-        back_button = Button(text="Back to Stage Selection", size_hint=(1, 0.2))
-        back_button.bind(on_release=self.go_to_stage_selection)  # Use on_release
+        # Calculate optimal box dimensions based on screen size
+        # For narrower screens (phones), use more of the screen space
+        if Window.width < dp(600):  # Small phone screens
+            box_width = min(dp(500), Window.width * 0.95)
+            box_height = min(dp(600), Window.height * 0.9)
+        else:  # Tablets, desktops
+            box_width = min(dp(500), Window.width * 0.8)
+            box_height = min(dp(600), Window.height * 0.8)
         
-        layout.add_widget(label)
-        layout.add_widget(retry_button)
-        layout.add_widget(back_button)
+        # Adjust for very small screens - ensure minimum usable size
+        box_width = max(dp(280), box_width)
+        box_height = max(dp(350), box_height)
         
-        self.popup = Popup(title="Game Over", content=layout, size_hint=(0.5, 0.5), auto_dismiss=False)
+        # Create the main content box
+        box = BoxLayout(
+            orientation='vertical',
+            spacing=min(dp(10), Window.height * 0.015),  # Smaller spacing for small screens
+            padding=min(dp(15), Window.width * 0.03),   # Smaller padding for small screens
+            size_hint=(None, None),
+            size=(box_width, box_height),
+            pos_hint={'center_x': 0.5, 'center_y': 0.5}
+        )
+        
+        # Add box to content first
+        content.add_widget(box)
+        
+        # Now we can use box.pos and box.size directly
+        with box.canvas.before:
+            # Main background 
+            Color(0.15, 0.15, 0.2, 0.95)
+            self.rect_bg = RoundedRectangle(
+                pos=box.pos, 
+                size=box.size, 
+                radius=[min(dp(15), box_width * 0.05)]  # Responsive radius
+            )
+            
+            # Top gradient for style - position relative to box
+            Color(0.7, 0.1, 0.1, 0.7)  # Red tint for death
+            header_height = min(dp(50), box_height * 0.1)  # Responsive header height
+            self.rect_top = RoundedRectangle(
+                pos=(box.x, box.y + box.height - header_height),
+                size=(box.width, header_height),
+                radius=[min(dp(15), box_width * 0.05), min(dp(15), box_width * 0.05), 0, 0]
+            )
+            
+            # Border
+            Color(0.8, 0.3, 0.3, 0.8)
+            border_width = min(dp(2), box_width * 0.005)  # Responsive border width
+            self.rect_border = Line(
+                rounded_rectangle=(box.x, box.y, box.width, box.height, min(dp(15), box.width * 0.05)), 
+                width=border_width
+            )
+        
+        # Bind box position/size to update canvas drawings
+        def update_rects(*args):
+            self.rect_bg.pos = box.pos
+            self.rect_bg.size = box.size
+            header_height = min(dp(50), box.height * 0.1)
+            self.rect_top.pos = (box.x, box.y + box.height - header_height)
+            self.rect_top.size = (box.width, header_height)
+            self.rect_border.rounded_rectangle = (box.x, box.y, box.width, box.height, min(dp(15), box.width * 0.05))
+                
+        box.bind(pos=update_rects, size=update_rects)
+        
+        # Create a BoxLayout for the header - smaller for small screens
+        header_height = min(dp(50), box_height * 0.15)
+        if Window.width < dp(400):
+            header_height = min(dp(40), box_height * 0.12)
+            
+        header = BoxLayout(
+            orientation='horizontal', 
+            size_hint=(1, None),
+            height=header_height
+        )
+        
+        # Icon and title text sizes based on available space
+        icon_text_size = min(dp(40), box_width * 0.1)
+        if Window.width < dp(400):
+            icon_text_size = min(dp(24), box_width * 0.08)
+            
+        title_text_size = min(dp(28), box_width * 0.07)
+        if Window.width < dp(400):
+            title_text_size = min(dp(20), box_width * 0.06)
+        
+        # Death icon with responsive font size
+        death_icon = Label(
+            text="X",  # Use simple X character
+            font_size=icon_text_size, 
+            size_hint=(0.2, 1),
+            bold=True,
+            color=(1, 0, 0, 1)
+        )
+        
+        # Game Over text with responsive font size
+        game_over_text = Label(
+            text="GAME OVER",
+            font_size=title_text_size,
+            bold=True,
+            color=(1, 0.3, 0.3, 1),
+            size_hint=(0.8, 1)
+        )
+        
+        header.add_widget(death_icon)
+        header.add_widget(game_over_text)
+        
+        # Calculate text sizes based on available space
+        small_text = min(dp(16), box_width * 0.04)
+        if Window.width < dp(400):
+            small_text = min(dp(14), box_width * 0.035)
+        
+        # Add attempt counter with responsive font size
+        attempt_label = Label(
+            text=f"Attempt #{self.attempt_count}",
+            font_size=small_text,
+            color=(0.9, 0.9, 0.9, 0.8),
+            size_hint_y=None,
+            height=min(dp(24), box_height * 0.06)  # Smaller height for small screens
+        )
+        
+        # Adjust message text for very small screens
+        message_text = "Don't give up! Each failure brings you closer to success."
+        if Window.width < dp(350):
+            message_text = "Don't give up! Keep trying!"
+        
+        # Motivational message with responsive font size and adaptive width
+        message_label = Label(
+            text=message_text,
+            font_size=small_text,
+            color=(0.8, 0.8, 0.8, 1),
+            halign='center',
+            valign='center',
+            size_hint=(1, None),
+            height=min(dp(40), box_height * 0.1),  # Responsive height
+            text_size=(box.width - min(dp(30), box_width * 0.08), None)
+        )
+        
+        # Responsive button sizes - adjust for small screens
+        button_height = min(dp(45), box_height * 0.09)
+        if Window.width < dp(400):
+            button_height = min(dp(40), box_height * 0.08)
+            
+        button_text_size = min(dp(18), box_width * 0.045)
+        if Window.width < dp(400):
+            button_text_size = min(dp(16), box_width * 0.04)
+        
+        # Create simple vertical layout for buttons
+        buttons_layout = BoxLayout(
+            orientation='vertical',
+            spacing=min(dp(8), Window.height * 0.01),  # Tighter spacing for small screens
+            size_hint_y=None,
+            height=button_height * 3 + min(dp(16), Window.height * 0.02) * 2  # Account for button heights + spacing
+        )
+        
+        # Retry button with icon
+        retry_button = Button(
+            text="Retry Level",
+            font_size=button_text_size,
+            bold=True,
+            size_hint_y=None,
+            height=button_height,
+            background_normal='',
+            background_color=(0.7, 0.6, 0.1, 1)
+        )
+        
+        # Stage selection button
+        select_button = Button(
+            text="Level Selection",
+            font_size=button_text_size,
+            size_hint_y=None,
+            height=button_height,
+            background_normal='',
+            background_color=(0.2, 0.4, 0.7, 1)
+        )
+        
+        # Main menu button
+        menu_button = Button(
+            text="Main Menu",
+            font_size=button_text_size,
+            size_hint_y=None,
+            height=button_height,
+            background_normal='',
+            background_color=(0.5, 0.2, 0.2, 1)
+        )
+        
+        # Bind button events
+        retry_button.bind(on_release=self.retry_level)
+        select_button.bind(on_release=self.go_to_stage_selection)
+        menu_button.bind(on_release=self.go_to_home)
+        
+        # Add buttons to layout
+        buttons_layout.add_widget(retry_button)
+        buttons_layout.add_widget(select_button)
+        buttons_layout.add_widget(menu_button)
+        
+        # Add widgets to the box with appropriate spacing
+        box.add_widget(header)
+        box.add_widget(attempt_label)
+        box.add_widget(message_label)
+        
+        # Use weight system to ensure buttons are accessible at the bottom
+        box.add_widget(Widget(size_hint_y=1))  # Flexible spacer
+        box.add_widget(buttons_layout)
+        
+        # Create popup
+        self.popup = Popup(
+            title="",
+            content=content,
+            size_hint=(1, 1),
+            auto_dismiss=False,
+            title_size=0,
+            separator_height=0,
+            background_color=(0, 0, 0, 0)
+        )
+        
+        # Open popup with animations
         self.popup.open()
+        
+        # Apply animation after popup is open
+        box.opacity = 0
+        anim = Animation(opacity=1, duration=0.3)
+        anim.start(box)
         
     def show_level_complete_popup(self):
-        layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
-        label = Label(text="Level Complete!")
+        # Create a FloatLayout for the popup content
+        content = FloatLayout()
         
-        next_button = Button(text="Next Level", size_hint=(1, 0.2))
-        next_button.bind(on_release=self.go_to_next_level)  # Use on_release
+        # Add a semi-transparent background
+        with content.canvas.before:
+            Color(0, 0, 0, 0.8)
+            Rectangle(pos=(0, 0), size=Window.size)
         
-        back_button = Button(text="Back to Stage Selection", size_hint=(1, 0.2))
-        back_button.bind(on_release=self.go_to_stage_selection)  # Use on_release
+        # Calculate optimal box dimensions based on screen size
+        # For narrower screens (phones), use more of the screen space
+        if Window.width < dp(600):  # Small phone screens
+            box_width = min(dp(500), Window.width * 0.95)
+            box_height = min(dp(600), Window.height * 0.9)
+        else:  # Tablets, desktops
+            box_width = min(dp(500), Window.width * 0.8)
+            box_height = min(dp(600), Window.height * 0.8)
         
-        layout.add_widget(label)
-        layout.add_widget(next_button)
-        layout.add_widget(back_button)
+        # Adjust for very small screens - ensure minimum usable size
+        box_width = max(dp(280), box_width)
+        box_height = max(dp(350), box_height)
         
-        self.popup = Popup(title="Congratulations!", content=layout, size_hint=(0.5, 0.5), auto_dismiss=False)
+        # Create the main content box
+        box = BoxLayout(
+            orientation='vertical',
+            spacing=min(dp(10), Window.height * 0.015),  # Smaller spacing for small screens
+            padding=min(dp(15), Window.width * 0.03),   # Smaller padding for small screens
+            size_hint=(None, None),
+            size=(box_width, box_height),
+            pos_hint={'center_x': 0.5, 'center_y': 0.5}
+        )
+        
+        # Add box to content first
+        content.add_widget(box)
+        
+        # Add canvas instructions after box is added to content
+        with box.canvas.before:
+            # Main background 
+            Color(0.15, 0.15, 0.2, 0.95)
+            self.rect_bg_win = RoundedRectangle(
+                pos=box.pos, 
+                size=box.size, 
+                radius=[min(dp(15), box_width * 0.05)]  # Responsive radius
+            )
+            
+            # Top gradient for style - position relative to box
+            Color(0.1, 0.7, 0.2, 0.7)  # Green tint for victory
+            header_height = min(dp(50), box_height * 0.1)  # Responsive header height
+            self.rect_top_win = RoundedRectangle(
+                pos=(box.x, box.y + box.height - header_height),
+                size=(box.width, header_height),
+                radius=[min(dp(15), box_width * 0.05), min(dp(15), box_width * 0.05), 0, 0]
+            )
+            
+            # Gold border
+            Color(1, 0.8, 0.2, 0.8)
+            border_width = min(dp(2), box_width * 0.005)  # Responsive border width
+            self.rect_border_win = Line(
+                rounded_rectangle=(box.x, box.y, box.width, box.height, min(dp(15), box.width * 0.05)), 
+                width=border_width
+            )
+        
+        # Bind box position/size to update canvas drawings
+        def update_rects(*args):
+            self.rect_bg_win.pos = box.pos
+            self.rect_bg_win.size = box.size
+            header_height = min(dp(50), box.height * 0.1)
+            self.rect_top_win.pos = (box.x, box.y + box.height - header_height)
+            self.rect_top_win.size = (box.width, header_height)
+            self.rect_border_win.rounded_rectangle = (box.x, box.y, box.width, box.height, min(dp(15), box.width * 0.05))
+                
+        box.bind(pos=update_rects, size=update_rects)
+        
+        # Create a BoxLayout for the header - smaller for small screens
+        header_height = min(dp(50), box_height * 0.15)
+        if Window.width < dp(400):
+            header_height = min(dp(40), box_height * 0.12)
+            
+        header = BoxLayout(
+            orientation='horizontal', 
+            size_hint=(1, None),
+            height=header_height
+        )
+        
+        # Icon and title text sizes based on available space
+        icon_text_size = min(dp(40), box_width * 0.1)
+        if Window.width < dp(400):
+            icon_text_size = min(dp(24), box_width * 0.08)
+            
+        title_text_size = min(dp(28), box_width * 0.065)
+        if Window.width < dp(400):
+            title_text_size = min(dp(20), box_width * 0.06)
+        
+        # Victory icon with responsive font size
+        victory_icon = Label(
+            text="★",  # Star character
+            font_size=icon_text_size,
+            size_hint=(0.2, 1),
+            bold=True,
+            color=(1, 0.9, 0.2, 1)  # Gold color
+        )
+        
+        # Adjust text for small screens
+        victory_text = "LEVEL COMPLETE!"
+        if Window.width < dp(350):
+            victory_text = "COMPLETE!"
+        
+        # Level Complete text with responsive font size
+        victory_label = Label(
+            text=victory_text,
+            font_size=title_text_size,
+            bold=True,
+            color=(0.3, 1, 0.3, 1),  # Green color
+            size_hint=(0.8, 1)
+        )
+        
+        header.add_widget(victory_icon)
+        header.add_widget(victory_label)
+        
+        # Calculate text sizes based on available space
+        small_text = min(dp(16), box_width * 0.04)
+        if Window.width < dp(400):
+            small_text = min(dp(14), box_width * 0.035)
+        
+        # Add attempt counter with responsive font size
+        attempt_label = Label(
+            text=f"Completed in {self.attempt_count} attempts",
+            font_size=small_text,
+            color=(0.9, 0.9, 0.9, 0.8),
+            size_hint_y=None,
+            height=min(dp(24), box_height * 0.06)  # Smaller height for small screens
+        )
+        
+        # Adjust message text for very small screens
+        message_text = "Great job! You've conquered this level!"
+        if Window.width < dp(350):
+            message_text = "Great job!"
+        
+        # Congratulatory message with responsive font size
+        message_label = Label(
+            text=message_text,
+            font_size=small_text,
+            color=(0.8, 0.8, 0.8, 1),
+            halign='center',
+            valign='center',
+            size_hint=(1, None),
+            height=min(dp(40), box_height * 0.08),
+            text_size=(box.width - min(dp(30), box_width * 0.08), None)
+        )
+        
+        # Star rating - ensure it's visible and properly sized even on small screens
+        stars_box = BoxLayout(
+            orientation='horizontal', 
+            size_hint=(0.8, None),
+            pos_hint={'center_x': 0.5},
+            height=min(dp(50), box_height * 0.1),
+            spacing=min(dp(5), box_width * 0.02)
+        )
+        
+        # Calculate stars based on attempt count
+        num_stars = 3
+        if self.attempt_count > 5:
+            num_stars = 2
+        if self.attempt_count > 10:
+            num_stars = 1
+                
+        # Create stars with responsive size
+        star_font_size = min(dp(30), box_width * 0.08)
+        if Window.width < dp(400):
+            star_font_size = min(dp(24), box_width * 0.07)
+            
+        for i in range(3):
+            star_color = (1, 0.9, 0.2, 1) if i < num_stars else (0.3, 0.3, 0.3, 0.5)
+            star = Label(
+                text="★",
+                font_size=star_font_size,
+                color=star_color
+            )
+            stars_box.add_widget(star)
+        
+        # Responsive button sizes - adjust for small screens
+        button_height = min(dp(45), box_height * 0.09)
+        if Window.width < dp(400):
+            button_height = min(dp(40), box_height * 0.08)
+            
+        button_text_size = min(dp(18), box_width * 0.045)
+        if Window.width < dp(400):
+            button_text_size = min(dp(16), box_width * 0.04)
+        
+        # Create simple vertical layout for buttons
+        buttons_layout = BoxLayout(
+            orientation='vertical',
+            spacing=min(dp(8), Window.height * 0.01),
+            size_hint_y=None,
+            height=button_height * 3 + min(dp(16), Window.height * 0.02) * 2
+        )
+        
+        # Next Level button
+        next_button = Button(
+            text="Next Level",
+            font_size=button_text_size,
+            bold=True,
+            size_hint_y=None,
+            height=button_height,
+            background_normal='',
+            background_color=(0.2, 0.7, 0.2, 1)
+        )
+        
+        # Replay button
+        replay_button = Button(
+            text="Replay Level",
+            font_size=button_text_size,
+            size_hint_y=None,
+            height=button_height,
+            background_normal='',
+            background_color=(0.7, 0.7, 0.2, 1)
+        )
+        
+        # Level Selection button
+        select_button = Button(
+            text="Level Selection",
+            font_size=button_text_size,
+            size_hint_y=None,
+            height=button_height,
+            background_normal='',
+            background_color=(0.3, 0.5, 0.8, 1)
+        )
+        
+        # Bind button events
+        next_button.bind(on_release=self.go_to_next_level)
+        replay_button.bind(on_release=self.retry_level)
+        select_button.bind(on_release=self.go_to_stage_selection)
+        
+        # Add buttons to layout
+        buttons_layout.add_widget(next_button)
+        buttons_layout.add_widget(replay_button)
+        buttons_layout.add_widget(select_button)
+        
+        # Add widgets to the box with appropriate spacing
+        box.add_widget(header)
+        box.add_widget(attempt_label)
+        box.add_widget(message_label)
+        box.add_widget(stars_box)
+        
+        # Use weight system to ensure buttons are accessible at the bottom
+        box.add_widget(Widget(size_hint_y=1))  # Flexible spacer
+        box.add_widget(buttons_layout)
+        
+        # Create popup
+        self.popup = Popup(
+            title="",
+            content=content,
+            size_hint=(1, 1),
+            auto_dismiss=False,
+            title_size=0,
+            separator_height=0,
+            background_color=(0, 0, 0, 0)
+        )
+        
+        # Open popup with animations
         self.popup.open()
+        
+        # Apply animation after popup is open
+        box.opacity = 0
+        anim = Animation(opacity=1, duration=0.3)
+        anim.start(box)
         
     def retry_level(self, instance=None):
         if hasattr(self, 'popup') and self.popup:
@@ -276,6 +743,7 @@ class GameScreen(Screen):
             next_level = current_level + 1
             next_level_file = f"assets/levels/level{next_level}.json"
             
+            # Check if next level exists
             try:
                 with open(next_level_file, 'r') as f:
                     # Cancel existing game loop
@@ -284,9 +752,15 @@ class GameScreen(Screen):
                         self.game_loop = None
                     Clock.unschedule(self.update)
                     
+                    # Reset attempt counter for the new level
+                    self.attempt_count = 1
+                    
                     # Load next level
                     self.level_file = next_level_file
                     self.setup_level()
+                    
+                # Ensure we're on the game screen
+                if self.manager.current != 'game':
                     self.manager.current = 'game'
                     
             except FileNotFoundError:
@@ -309,9 +783,16 @@ class GameScreen(Screen):
         self.manager.current = 'stage_selection'
         
     def go_to_home(self, instance):
-        self.manager.current = 'home'
-        if hasattr(self, 'popup'):
+        if hasattr(self, 'popup') and self.popup:
             self.popup.dismiss()
+            self.popup = None
+        
+        if self.game_loop:
+            self.game_loop.cancel()
+            self.game_loop = None
+        Clock.unschedule(self.update)
+        
+        self.manager.current = 'home'
         
     def on_enter(self):
         self.setup_level()
