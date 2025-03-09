@@ -51,3 +51,4 @@ class StageSelectionScreen(Screen):
         next_level = current_level + 1
         self.unlocked_levels.add(next_level)
         self.load_levels()  # Refresh buttons to update locked/unlocked status
+        print(f"Unlocked level {next_level}")

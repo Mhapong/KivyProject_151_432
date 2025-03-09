@@ -14,12 +14,12 @@
     { "type": "spike", "x": 2250, "y": 130 },
     { "type": "spike", "x": 2500, "y": 130 },
     { "type": "spike", "x": 2850, "y": 130 },
-    { "type": "boost_pad", "x": 3095, "y": 130 },
+    { "type": "boost_pad", "x": 3070, "y": 130 },
     { "type": "spike", "x": 3150, "y": 130 },
     { "type": "spike", "x": 3250, "y": 130 },
     { "type": "spike", "x": 3350, "y": 130 },
     { "type": "spike", "x": 3700, "y": 130 },
     { "type": "spike", "x": 3900, "y": 130 },
-    { "type": "spike", "x": 4200, "y": 130 }
+    { "type": "spike", "x": 4250, "y": 130 }
   ]
 }

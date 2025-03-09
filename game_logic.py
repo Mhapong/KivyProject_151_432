@@ -355,61 +355,60 @@ class BoostPad(Widget):
         self.bind(pos=self._update_rect)
 
     def _update_rect(self, *args):
-        self.rect.pos = self.pos
+        # This will fail without resetting the canvas
+        # Need to redraw all elements when position changes
+        self.canvas.clear()
+        with self.canvas:
+            # Redraw everything
+            Color(1, 1, 0)  # Yellow color
+            self.rect = Rectangle(pos=self.pos, size=self.size)
 
 from kivy.core.window import Window
 
 class FinishLine(Widget):
     def __init__(self, pos, **kwargs):
         super().__init__(**kwargs)
-        self.size = (80, Window.height)  # Make it wider
+        self.size = (100, Window.height)  # Wider and full height
         self.pos = pos
-        with self.canvas:
-            # More vibrant color
-            Color(0, 1, 0, 0.8)  # Brighter green with higher opacity
-            self.rect = Rectangle(pos=self.pos, size=self.size)
-            
-            # Add checkered pattern for better visibility
-            Color(1, 1, 1, 0.9)  # White checkers
-            checker_size = 30
-            for y in range(0, int(Window.height), checker_size*2):
-                for i in range(int(Window.height/checker_size/2)):
-                    Rectangle(pos=(self.pos[0], y + i*checker_size*2), 
-                            size=(checker_size, checker_size))
-                    Rectangle(pos=(self.pos[0] + checker_size, y + checker_size + i*checker_size*2),
-                            size=(checker_size, checker_size))
-            
-            # Bold border
-            Color(0, 0, 0, 1)  # Black border
-            Line(rectangle=(self.pos[0], self.pos[1], self.size[0], self.size[1]), width=4)
         
-        self.bind(pos=self._update_rect, size=self._update_rect)
-        
-    def _update_rect(self, *args):
-        # This will fail without resetting the canvas
-        # Need to redraw all elements when position changes
-        self.canvas.clear()
+        # Create with more visible appearance
+        self.redraw_canvas()
+        self.bind(pos=self._update_rect)
+    
+    def redraw_canvas(self):
         with self.canvas:
-            Color(0, 1, 0, 0.8)
-            self.rect = Rectangle(pos=self.pos, size=self.size)
+            # More visible colors
+            Color(0, 1, 0, 0.9)  # Very bright green with high opacity
+            Rectangle(pos=self.pos, size=self.size)
             
-            Color(1, 1, 1, 0.9)
-            checker_size = 30
-            for y in range(0, int(Window.height), checker_size*2):
-                for i in range(int(Window.height/checker_size/2)):
-                    Rectangle(pos=(self.pos[0], y + i*checker_size*2), 
-                            size=(checker_size, checker_size))
-                    Rectangle(pos=(self.pos[0] + checker_size, y + checker_size + i*checker_size*2),
-                            size=(checker_size, checker_size))
+            # Larger checkered pattern for better visibility
+            Color(1, 1, 1, 1.0)  # Pure white
+            checker_size = 50  # Larger checkers
+            rows = int(Window.height / checker_size)
+            cols = int(self.size[0] / checker_size)
             
+            for row in range(rows):
+                for col in range(cols):
+                    if (row + col) % 2 == 0:
+                        Rectangle(
+                            pos=(self.pos[0] + col * checker_size, 
+                                 self.pos[1] + row * checker_size),
+                            size=(checker_size, checker_size)
+                        )
+            
+            # Bolder border
             Color(0, 0, 0, 1)
-            Line(rectangle=(self.pos[0], self.pos[1], self.size[0], self.size[1]), width=4)
+            Line(rectangle=(self.pos[0], self.pos[1], self.size[0], self.size[1]), width=6)
+
+    def _update_rect(self, *args):
+        # Clear and redraw when position changes
+        self.canvas.clear()
+        self.redraw_canvas()
 
     def check_collision(self, player):
-        # Improved collision detection with overlap threshold
-        collision_margin = 10  # pixels of overlap required
-        if (player.right > self.x + collision_margin and 
-            player.x < self.right - collision_margin):
+        # More lenient collision detection specifically for level 3
+        if player.x > self.x - 50 and player.x < self.x + self.width + 50:
+            print("FINISH LINE COLLISION DETECTED!")
             return True
         return False
 

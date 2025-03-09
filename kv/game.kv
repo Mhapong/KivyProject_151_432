@@ -1,4 +1,8 @@
 <GameScreen>:
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, 1  # Set background to black to avoid white squares
+            
     FloatLayout:
         id: game_screen
 
@@ -7,10 +11,14 @@
             id: background
             source: 'assets/image/map_1.jpg'
             size_hint: (1, 1)
+            allow_stretch: True
+            keep_ratio: False
 
         # Game World Widget
         Widget:
             id: game_world
+            canvas:
+                # No default canvas instructions here
 
             # Player
             Player:
@@ -33,4 +41,3 @@
             Image:
                 id: ground1
                 source: 'assets/image/ground.png'
-               

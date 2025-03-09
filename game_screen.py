@@ -89,10 +89,16 @@ class GameScreen(Screen):
             old_x = finish_line.x
             finish_line.x -= self.player.moving_speed * dt
             
-            if finish_line.x < Window.width + 500 and finish_line.x > Window.width - 500:
-                print(f"Finish line approaching: {finish_line.x}")
+            # Additional debugging for level 3
+            if "level3.json" in self.level_file and len(self.finish_lines) > 0:
+                if self.game_loop.frames % 60 == 0:  # Print every ~1 second (assuming 60fps)
+                    print(f"Level 3 finish line at x={finish_line.x}, player at x={self.player.x}")
             
-            # Check if player reached finish line
+            # Debug when finish line is approaching
+            if finish_line.x < Window.width * 2 and finish_line.x > -500:
+                print(f"Finish line approaching: x={finish_line.x}, window_width={Window.width}")
+            
+            # Check if player reached finish line with improved detection
             if finish_line.check_collision(self.player):
                 print("FINISH LINE REACHED!")
                 self.level_complete()
@@ -451,14 +457,15 @@ class GameScreen(Screen):
     def create_finish_line(self):
         if 'finish_x' in self.level_data:
             finish_x = self.level_data['finish_x']
-            print(f"Creating finish line at x={finish_x}")
-            # Make sure the finish line is visible by positioning it within the screen
+            print(f"Creating finish line at x={finish_x} for level {os.path.basename(self.level_file)}")
+            
+            # Make sure the finish line is visible - improve its appearance
             finish_line = FinishLine(pos=(finish_x, 0))
             self.finish_lines.append(finish_line)
             self.game_world.add_widget(finish_line)
             print(f"Finish line added: {finish_line}, position: {finish_line.pos}")
         else:
-            print("No finish_x in level data!")
+            print(f"No finish_x in level data for {os.path.basename(self.level_file)}!")
 
     def create_speed_portals(self):
         if 'speed_portals' in self.level_data:
@@ -467,3 +474,8 @@ class GameScreen(Screen):
                                     speed_multiplier=portal_data['speed'])
                 self.speed_portals.append(portal)
                 self.game_world.add_widget(portal)
+
+    def on_size(self, *args):
+        """Ensure game_world covers the entire screen when resized"""
+        if hasattr(self, 'game_world') and self.game_world:
+            self.game_world.size = self.size
