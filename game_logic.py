@@ -43,7 +43,7 @@ class Player(Image):
             self.jump_time += dt
         
         # Terminal velocity - geometry dash has a fairly hard cap
-        if self.velocity < -1200:
+        if (self.velocity < -1200):
             self.velocity = -1200
         
         # Update position
@@ -131,13 +131,19 @@ class Player(Image):
         return False
 
     def jump(self):
-        if self.on_ground:  # Only jump if on the ground
+        print(f"Jump called. On ground: {self.on_ground}")
+        
+        # Only jump if on the ground
+        if self.on_ground:
+            print("Jumping!")
             self.velocity = self.jump_strength
             self.on_ground = False
             self.is_jumping = True
             self.jump_time = 0  # Reset jump timer
             self.opacity = 1
             self.source = self.original_source
+        else:
+            print("Cannot jump - not on ground")
 
     def die(self):
         anim = Animation(opacity=0, duration=0.5) + Animation(opacity=1, duration=0.5)
@@ -248,6 +254,95 @@ class Spike(Widget):
 
         return not (has_neg and has_pos)
 
+class RotatingSpike(Widget):
+    def __init__(self, pos, angle=180, **kwargs):
+        super().__init__(**kwargs)
+        self.size = (30, 30)  # Same size as regular spike
+        self.pos = pos
+        self.angle = angle  # Default to 180 degrees (upside down)
+        self.initial_x = pos[0]  # Store initial x position
+        # Calculate triangle points based on angle
+        self.triangle_points = self._calculate_triangle_points()
+        
+        with self.canvas:
+            Color(1, 0.5, 0)  # Orange color to distinguish from regular spikes
+            self.triangle = Triangle(points=self.triangle_points)
+        self.bind(pos=self._update_shape, size=self._update_shape)
+
+    def _calculate_triangle_points(self):
+        # Create a triangle with the specified rotation
+        if self.angle == 180:  # Upside down spike
+            return [
+                self.x + self.width * 0.5, self.y,                # Bottom point
+                self.x + self.width * 0.1, self.y + self.height,  # Top left
+                self.x + self.width * 0.9, self.y + self.height   # Top right
+            ]
+        elif self.angle == 90:  # Pointing right
+            return [
+                self.x + self.width, self.y + self.height * 0.5,  # Right point
+                self.x, self.y + self.height * 0.1,               # Bottom left
+                self.x, self.y + self.height * 0.9                # Top left
+            ]
+        elif self.angle == 270:  # Pointing left
+            return [
+                self.x, self.y + self.height * 0.5,               # Left point
+                self.x + self.width, self.y + self.height * 0.1,  # Bottom right
+                self.x + self.width, self.y + self.height * 0.9   # Top right
+            ]
+        else:  # Default - pointing up (0 degrees)
+            return [
+                self.x + self.width * 0.5, self.y + self.height,  # Top point
+                self.x + self.width * 0.1, self.y,                # Bottom left
+                self.x + self.width * 0.9, self.y                 # Bottom right
+            ]
+
+    def _update_shape(self, *args):
+        self.triangle_points = self._calculate_triangle_points()
+        self.triangle.points = self.triangle_points
+
+    def collide_with_player(self, player):
+        # Same collision detection as regular spike
+        # Get player hitbox (slightly smaller than visual size)
+        px = player.x + player.width * 0.2  # 20% inset from left
+        py = player.y + player.height * 0.2  # 20% inset from bottom
+        pw = player.width * 0.6  # 60% of original width
+        ph = player.height * 0.6  # 60% of original height
+        
+        # Check if any corner of the player hitbox is inside the triangle
+        player_points = [
+            (px, py),                # Bottom left
+            (px + pw, py),          # Bottom right
+            (px, py + ph),          # Top left
+            (px + pw, py + ph)      # Top right
+        ]
+        
+        # Check center point too
+        player_points.append((px + pw/2, py + ph/2))
+        
+        for point in player_points:
+            if self._point_in_triangle(point[0], point[1]):
+                return True
+        return False
+    
+    def _point_in_triangle(self, x, y):
+        # Get triangle points
+        x1, y1 = self.triangle_points[0], self.triangle_points[1]
+        x2, y2 = self.triangle_points[2], self.triangle_points[3]
+        x3, y3 = self.triangle_points[4], self.triangle_points[5]
+        
+        # Calculate barycentric coordinates
+        def sign(x1, y1, x2, y2, x3, y3):
+            return (x1 - x3) * (y2 - y3) - (x2 - x3) * (y1 - y3)
+            
+        d1 = sign(x, y, x1, y1, x2, y2)
+        d2 = sign(x, y, x2, y2, x3, y3)
+        d3 = sign(x, y, x3, y3, x1, y1)
+
+        has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
+        has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
+
+        return not (has_neg and has_pos)
+
 class BoostPad(Widget):
     def __init__(self, pos, **kwargs):
         super().__init__(**kwargs)
@@ -267,16 +362,16 @@ from kivy.core.window import Window
 class FinishLine(Widget):
     def __init__(self, pos, **kwargs):
         super().__init__(**kwargs)
-        self.size = (50, Window.height)
+        self.size = (80, Window.height)  # Make it wider
         self.pos = pos
         with self.canvas:
             # More vibrant color
-            Color(0, 1, 0.5, 0.7)  # Brighter green with higher opacity
+            Color(0, 1, 0, 0.8)  # Brighter green with higher opacity
             self.rect = Rectangle(pos=self.pos, size=self.size)
             
             # Add checkered pattern for better visibility
             Color(1, 1, 1, 0.9)  # White checkers
-            checker_size = 25
+            checker_size = 30
             for y in range(0, int(Window.height), checker_size*2):
                 for i in range(int(Window.height/checker_size/2)):
                     Rectangle(pos=(self.pos[0], y + i*checker_size*2), 
@@ -286,7 +381,7 @@ class FinishLine(Widget):
             
             # Bold border
             Color(0, 0, 0, 1)  # Black border
-            Line(rectangle=(self.pos[0], self.pos[1], self.size[0], self.size[1]), width=3)
+            Line(rectangle=(self.pos[0], self.pos[1], self.size[0], self.size[1]), width=4)
         
         self.bind(pos=self._update_rect, size=self._update_rect)
         
@@ -295,11 +390,11 @@ class FinishLine(Widget):
         # Need to redraw all elements when position changes
         self.canvas.clear()
         with self.canvas:
-            Color(0, 1, 0.5, 0.7)
+            Color(0, 1, 0, 0.8)
             self.rect = Rectangle(pos=self.pos, size=self.size)
             
             Color(1, 1, 1, 0.9)
-            checker_size = 25
+            checker_size = 30
             for y in range(0, int(Window.height), checker_size*2):
                 for i in range(int(Window.height/checker_size/2)):
                     Rectangle(pos=(self.pos[0], y + i*checker_size*2), 
@@ -308,7 +403,7 @@ class FinishLine(Widget):
                             size=(checker_size, checker_size))
             
             Color(0, 0, 0, 1)
-            Line(rectangle=(self.pos[0], self.pos[1], self.size[0], self.size[1]), width=3)
+            Line(rectangle=(self.pos[0], self.pos[1], self.size[0], self.size[1]), width=4)
 
     def check_collision(self, player):
         # Improved collision detection with overlap threshold

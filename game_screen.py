@@ -84,15 +84,17 @@ class GameScreen(Screen):
                 self.speed_portals.remove(portal)
                 self.game_world.remove_widget(portal)
         
-        # Move finish lines
+        # Move finish lines with better debugging
         for finish_line in self.finish_lines[:]:
+            old_x = finish_line.x
             finish_line.x -= self.player.moving_speed * dt
             
-            # Comment out debug prints to reduce console spam
-            # print(f"Finish line at: {finish_line.pos}, Player at: {self.player.pos}")
+            if finish_line.x < Window.width + 500 and finish_line.x > Window.width - 500:
+                print(f"Finish line approaching: {finish_line.x}")
             
             # Check if player reached finish line
             if finish_line.check_collision(self.player):
+                print("FINISH LINE REACHED!")
                 self.level_complete()
                 return
 
@@ -106,18 +108,23 @@ class GameScreen(Screen):
             return
     
     def _on_key_down(self, instance, keyboard, keycode, text, modifiers):
-        print(f"Key pressed: {keycode}")  # Debug print
+        # Print more detailed debug info to help diagnose keyboard issues
+        print(f"Key pressed: {keycode}, text: {text}, modifiers: {modifiers}")
+        
+        # Handle both tuple and direct code formats
         if isinstance(keycode, tuple):
             code, key = keycode
         else:
             code = keycode
             key = None
-
-        # Check both keycode number and key name for space
-        if key in (32, 'space', 'spacebar'):
-            print("Space key detected!")
-            if self.player and hasattr(self.player, 'on_ground'):
-                print(f"Player on_ground: {self.player.on_ground}")
+        
+        # Check for space bar in various formats
+        if code == 32 or key == 'spacebar' or key == 'space':
+            print("Spacebar detected! Player on_ground:", self.player.on_ground)
+            
+            # Force a jump if the game is active
+            if self.game_loop and self.player:
+                # Jump handling
                 self.player.jump()
 
     def _on_mouse_down(self, instance, x, y, button, modifiers):
@@ -424,23 +431,28 @@ class GameScreen(Screen):
                     obstacle = Spike(pos=(obstacle_data['x'], obstacle_data['y']))
                     self.obstacles.append(obstacle)
                     self.game_world.add_widget(obstacle)
+                    obstacle.initial_x = obstacle_data['x']
                     
-                    # Store the associated platform for each obstacle
-                    obstacle.initial_x = obstacle_data['x']  # Store initial x position
+                elif obstacle_data['type'] == 'rotating_spike':
+                    # Create the rotating spike
+                    angle = obstacle_data.get('angle', 180)  # Default to 180 if not specified
+                    obstacle = RotatingSpike(pos=(obstacle_data['x'], obstacle_data['y']), angle=angle)
+                    self.obstacles.append(obstacle)
+                    self.game_world.add_widget(obstacle)
+                    obstacle.initial_x = obstacle_data['x']
                     
                 elif obstacle_data['type'] == 'boost_pad':
                     # Create the boost pad
                     obstacle = BoostPad(pos=(obstacle_data['x'], obstacle_data['y']))
                     self.obstacles.append(obstacle)
                     self.game_world.add_widget(obstacle)
-                    
-                    # Store the associated platform for each obstacle
-                    obstacle.initial_x = obstacle_data['x']  # Store initial x position
+                    obstacle.initial_x = obstacle_data['x']
 
     def create_finish_line(self):
         if 'finish_x' in self.level_data:
             finish_x = self.level_data['finish_x']
             print(f"Creating finish line at x={finish_x}")
+            # Make sure the finish line is visible by positioning it within the screen
             finish_line = FinishLine(pos=(finish_x, 0))
             self.finish_lines.append(finish_line)
             self.game_world.add_widget(finish_line)
