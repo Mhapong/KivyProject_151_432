@@ -5,7 +5,7 @@
             size: self.size
             source: 'assets/image/background.png'
         
-        # Add gradient overlay for better readability
+        # Gradient overlay for better readability that scales with window
         Color:
             rgba: 0, 0, 0, 0.4
         Rectangle:
@@ -14,16 +14,16 @@
 
     BoxLayout:
         orientation: 'vertical'
-        padding: dp(20)
-        spacing: dp(15)
+        padding: min(dp(20), root.width * 0.03)  # Responsive padding
+        spacing: min(dp(15), root.height * 0.02)  # Responsive spacing
 
-        # Header section
+        # Header section - adaptive height based on screen size
         BoxLayout:
             orientation: 'vertical'
-            size_hint_y: 0.2
-            padding: [0, dp(10)]
+            size_hint_y: 0.15 if root.height > dp(500) else 0.2
+            padding: [0, min(dp(10), root.height * 0.01)]
             
-            # Title with shadow effect
+            # Title with shadow effect - responsive font size
             BoxLayout:
                 orientation: 'vertical'
                 size_hint_y: 0.7
@@ -31,7 +31,7 @@
                 # Shadow layer
                 Label:
                     text: "Customize Your Cube"
-                    font_size: '36sp'
+                    font_size: min(dp(36), root.width * 0.07)  # Responsive font size
                     bold: True
                     color: 0, 0, 0, 0.5
                     size_hint_y: None
@@ -41,7 +41,7 @@
                 # Main title
                 Label:
                     text: "Customize Your Cube"
-                    font_size: '36sp'
+                    font_size: min(dp(36), root.width * 0.07)  # Match shadow font size
                     bold: True
                     color: 1, 0.8, 0.2, 1
                     size_hint_y: None
@@ -51,21 +51,21 @@
             # Subtitle
             Label:
                 text: "Choose your favorite look"
-                font_size: '18sp'
+                font_size: min(dp(18), root.width * 0.04)  # Responsive font size
                 italic: True
                 size_hint_y: 0.3
                 color: 0.9, 0.9, 0.9, 0.8
         
-        # Preview section with fancy border
+        # Preview section with fancy border - adaptive height
         BoxLayout:
             orientation: 'vertical'
-            size_hint_y: 0.3
-            padding: [dp(50), dp(10)]
+            size_hint_y: 0.3 if root.height > dp(500) else 0.25
+            padding: [min(dp(50), root.width * 0.08), min(dp(10), root.height * 0.02)]
             
             # Current selection label
             Label:
                 text: "Current Selection"
-                font_size: '22sp'
+                font_size: min(dp(22), root.width * 0.05)  # Responsive font size
                 bold: True
                 size_hint_y: 0.3
                 color: 0.9, 0.9, 1, 1
@@ -86,15 +86,15 @@
                     Color:
                         rgba: 0.5, 0.5, 1, 0.8
                     Line:
-                        rounded_rectangle: [self.x, self.y, self.width, self.height, 15]
-                        width: 2
+                        rounded_rectangle: [self.x, self.y, self.width, self.height, min(dp(15), self.width * 0.05)]
+                        width: min(dp(2), self.width * 0.01)
                 
-                # Preview image with glow effect
+                # Preview image with glow effect - responsive size
                 Image:
                     id: skin_preview
                     source: root.selected_skin
                     size_hint: None, None
-                    size: min(dp(150), self.parent.width * 0.4), min(dp(150), self.parent.width * 0.4)
+                    size: min(dp(150), self.parent.width * 0.5), min(dp(150), self.parent.width * 0.5)
                     pos_hint: {'center_x': 0.5, 'center_y': 0.5}
                     allow_stretch: True
                     keep_ratio: True
@@ -104,9 +104,9 @@
                         Color:
                             rgba: 0.9, 0.9, 1, 0.3
                         RoundedRectangle:
-                            pos: [self.x - dp(5), self.y - dp(5)]
-                            size: [self.width + dp(10), self.height + dp(10)]
-                            radius: [dp(10)]
+                            pos: [self.x - min(dp(5), self.width * 0.05), self.y - min(dp(5), self.height * 0.05)]
+                            size: [self.width + min(dp(10), self.width * 0.1), self.height + min(dp(10), self.height * 0.1)]
+                            radius: [min(dp(10), self.width * 0.1)]
                     
                     # Rotation animation
                     canvas.before:
@@ -118,25 +118,25 @@
                     canvas.after:
                         PopMatrix
 
-        # Skin grid with better layout
+        # Skin grid with better layout - adaptive height
         BoxLayout:
             orientation: 'vertical'
-            size_hint_y: 0.4
+            size_hint_y: 0.45 if root.height > dp(500) else 0.4
             
-            # Section title with underline
+            # Section title with underline - responsive height
             BoxLayout:
                 orientation: 'vertical'
-                size_hint_y: 0.2
-                padding: [0, dp(5)]
+                size_hint_y: 0.15
+                padding: [0, min(dp(5), root.height * 0.01)]
                 
                 Label:
                     text: "Available Skins"
-                    font_size: '20sp'
+                    font_size: min(dp(20), root.width * 0.045)  # Responsive font size
                     bold: True
                     color: 0.95, 0.95, 1, 1
                     size_hint_y: 0.7
                 
-                # Decorative line below section title
+                # Decorative line below section title - responsive width
                 Widget:
                     size_hint_y: 0.3
                     canvas:
@@ -144,14 +144,14 @@
                             rgba: 0.7, 0.7, 1, 0.8
                         Line:
                             points: [self.x + self.width * 0.25, self.y + self.height * 0.5, self.x + self.width * 0.75, self.y + self.height * 0.5]
-                            width: dp(2)
+                            width: min(dp(2), self.width * 0.005)
             
-            # ScrollView for GridLayout
+            # ScrollView for GridLayout - responsive scrollbar
             ScrollView:
-                size_hint_y: 0.8
+                size_hint_y: 0.85
                 do_scroll_x: False
                 do_scroll_y: True
-                bar_width: dp(10)
+                bar_width: min(dp(10), root.width * 0.02)  # Responsive scrollbar width
                 bar_color: [0.7, 0.7, 1, 0.9]  # Light purple scroll bar
                 bar_inactive_color: [0.7, 0.7, 1, 0.2]
                 effect_cls: "ScrollEffect"
@@ -160,26 +160,27 @@
                 # GridLayout for skin buttons with responsive columns
                 GridLayout:
                     id: skin_grid
-                    cols: max(3, min(7, int(root.width / dp(160))))
-                    spacing: dp(12)
-                    padding: dp(10)
+                    # Columns will be set in Python code based on screen width
+                    cols: 4  # Default value, will be overridden
+                    spacing: min(dp(12), root.width * 0.02)  # Responsive spacing
+                    padding: min(dp(10), root.width * 0.02)  # Responsive padding
                     size_hint_y: None
                     height: self.minimum_height
-                    row_default_height: dp(160)
-                    col_default_width: dp(160)
+                    row_default_height: min(dp(160), root.width * 0.25)  # Responsive height
+                    col_default_width: min(dp(160), root.width * 0.25)  # Responsive width
                     
                     # Dynamic skin buttons will be generated in Python
                     
-        # Bottom navigation
+        # Bottom navigation - adaptive height
         BoxLayout:
             orientation: 'horizontal'
-            size_hint_y: 0.1
-            spacing: dp(20)
-            padding: [dp(50), dp(5)]
+            size_hint_y: 0.1 if root.height > dp(500) else 0.15
+            spacing: min(dp(20), root.width * 0.03)
+            padding: [min(dp(50), root.width * 0.1), min(dp(5), root.height * 0.01)]
             
             Button:
                 text: "Back to Menu"
-                font_size: dp(18)
+                font_size: min(dp(18), root.width * 0.04)  # Responsive font size
                 size_hint: (0.8, 0.8)
                 pos_hint: {'center_y': 0.5}
                 background_normal: ''
@@ -192,4 +193,4 @@
                     RoundedRectangle:
                         pos: self.pos
                         size: [self.size[0], self.size[1]/2]
-                        radius: [dp(5), dp(5), 0, 0]
+                        radius: [min(dp(5), self.width * 0.05), min(dp(5), self.width * 0.05), 0, 0]
