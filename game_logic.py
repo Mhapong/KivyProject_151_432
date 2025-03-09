@@ -15,39 +15,44 @@ class Player(Image):
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.gravity = -1500
-        self.jump_strength = 800
+        # Geometry Dash-like physics constants
+        self.gravity = -2800        # Increased gravity for snappier falls
+        self.jump_strength = 880    # Higher jump strength for proper jump height
         self.velocity = 0
-        self.moving_speed = 500
+        self.moving_speed = 500     # Constant move speed
         self.world_x = 0
         self.is_jumping = False
         self.on_ground = True
         self.rotation = 0
-        self.jump_height = 0  # Track jump height for rotation calculation
-        self.max_jump_height = 0  # Track maximum jump height
         self.opacity = 1
         self.original_source = kwargs.get('source', '')
         self.source = self.original_source
+        self.jump_time = 0          # Track time since last jump
+        self.total_jump_time = 0.55 # Approximate time for a full jump
 
     def update(self, dt, obstacles=None, platforms=None, finish_line=None):
         # Store previous position for collision resolution
         old_x = self.x
         old_y = self.y
         
-        # Apply gravity
+        # Apply gravity - more aggressive for snappier falls like GD
         self.velocity += self.gravity * dt
         
-        # Terminal velocity to prevent falling too fast
-        if self.velocity < -1000:
-            self.velocity = -1000
+        # Track jump time for rotation calculation
+        if not self.on_ground:
+            self.jump_time += dt
+        
+        # Terminal velocity - geometry dash has a fairly hard cap
+        if self.velocity < -1200:
+            self.velocity = -1200
         
         # Update position
         self.y += self.velocity * dt
         
-        # Platform collision with improved physics
+        # Platform collision handling
         if platforms:
             for platform in platforms:
-                # Basic collision detection (wider tolerance on sides)
+                # Basic collision detection with wider tolerance on sides
                 x_overlap = (self.x + self.width * 0.8 > platform.x and 
                              self.x + self.width * 0.2 < platform.x + platform.width)
                 
@@ -60,38 +65,46 @@ class Player(Image):
                     self.velocity = 0
                     self.on_ground = True
                     self.is_jumping = False
+                    self.jump_time = 0
                     
-                    # Snap to nearest 90 degrees when landing
+                    # Snap to nearest 90 degrees when landing - Geometry Dash style
                     target_angle = round(self.rotation / 90) * 90
                     self.rotation = target_angle
                 
-                # Side collision - make player stop when hitting platform side
+                # Side collision - make player die when hitting platform side
                 elif (not y_above_platform and 
                       self.y + self.height * 0.3 > platform.y and 
                       self.y < platform.y + platform.height * 0.7):
-                    # Check if player is trying to move into a platform from the side
-                    if (self.x + self.width > platform.x and 
-                        self.x + self.width < platform.x + 20):  # Left side collision
-                        # Stop horizontal movement
-                        return True  # Hit platform from side = death
                     
-                    elif (self.x < platform.x + platform.width and 
-                          self.x > platform.x + platform.width - 20):  # Right side collision
-                        # Stop horizontal movement
-                        return True  # Hit platform from side = death
+                    # Skip side collision at game start
+                    if platform.x < 400 and self.world_x < 200:
+                        pass
+                    else:
+                        # Check if player is trying to move into a platform from the side
+                        if (self.x + self.width > platform.x and 
+                            self.x + self.width < platform.x + 20):  # Left side collision
+                            return True  # Hit platform from side = death
+                        
+                        elif (self.x < platform.x + platform.width and 
+                              self.x > platform.x + platform.width - 20):  # Right side collision
+                            return True  # Hit platform from side = death
         
-        # Geometry Dash style rotation - always rotate clockwise during jumps
+        # Geometry Dash style rotation - smooth 360 degree rotate during jump
         if not self.on_ground:
-            # Determine rotation speed based on jump arc
-            jump_height_factor = abs(self.velocity) / self.jump_strength
-            base_rotation_speed = 360  # Degrees per second
-            rotation_speed = base_rotation_speed * (0.5 + jump_height_factor)
+            # Calculate rotation based on jump progress
+            jump_progress = min(1.0, self.jump_time / self.total_jump_time)
             
-            # Apply rotation
-            self.rotation += rotation_speed * dt
+            # Rotate based on jump curve - non-linear to match the arc
+            # First half of jump is slower rotation, second half is faster
+            if jump_progress <= 0.5:
+                # Slower rotation during ascent (0-180 degrees)
+                self.rotation = jump_progress * 180 * 2
+            else:
+                # Faster rotation during descent (180-360 degrees)
+                self.rotation = 180 + (jump_progress - 0.5) * 180 * 2
             
             # Keep rotation between 0-360
-            if self.rotation >= 360:
+            while self.rotation >= 360:
                 self.rotation -= 360
         
         # Death condition
@@ -105,10 +118,11 @@ class Player(Image):
                     if obstacle.collide_with_player(self):
                         return True
                 elif isinstance(obstacle, BoostPad) and self.collide_widget(obstacle):
-                    # Boost effect - higher jump
+                    # Boost effect with GD physics
                     self.velocity = self.jump_strength * 1.5
                     self.on_ground = False
                     self.is_jumping = True
+                    self.jump_time = 0  # Reset jump time for proper rotation
 
         # Check finish line
         if finish_line and isinstance(finish_line, FinishLine) and finish_line.check_collision(self):
@@ -118,16 +132,12 @@ class Player(Image):
 
     def jump(self):
         if self.on_ground:  # Only jump if on the ground
-            print(f"Jump method called. on_ground={self.on_ground}")
             self.velocity = self.jump_strength
             self.on_ground = False
             self.is_jumping = True
-            print(f"Jump initiated. New velocity: {self.velocity}")
-            # Make sure correct skin is applied
+            self.jump_time = 0  # Reset jump timer
             self.opacity = 1
             self.source = self.original_source
-        else:
-            print("Cannot jump - player is in the air")
 
     def die(self):
         anim = Animation(opacity=0, duration=0.5) + Animation(opacity=1, duration=0.5)
