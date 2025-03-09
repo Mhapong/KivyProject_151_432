@@ -5,7 +5,7 @@ from stage_selection_screen import StageSelectionScreen
 from game_screen import GameScreen
 from skin_selector_screen import SkinSelectorScreen
 from kivy.lang import Builder
-from kivy.core.window import Window  # Add this import
+from kivy.core.window import Window
 
 # Load the KV files
 Builder.load_file('kv/home.kv')
@@ -16,15 +16,25 @@ Builder.load_file('kv/skin_selector.kv')
 class MyApp(App):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # Set up global keyboard handler
+        # Set up global keyboard handler with correct parameters
         Window.bind(on_key_down=self.on_key_down)
         
-    def on_key_down(self, window, key, *largs):
+    def on_key_down(self, window, keycode, scancode, text, modifiers):
         # Print key code for debugging
-        print(f"Global key handler: {key}")
+        print(f"Global key handler: keycode={keycode}, scancode={scancode}, text={text}")
+        
+        # Handle ESC key (27) at the application level
+        if keycode == 27:  # ESC key
+            # If we're in the game screen, delegate to toggle_pause
+            if hasattr(self, 'root') and self.root.current == 'game':
+                game_screen = self.root.get_screen('game')
+                if hasattr(game_screen, 'toggle_pause'):
+                    print("Calling toggle_pause")
+                    game_screen.toggle_pause()
+                    return True
         
         # Handle space key (32) at the application level
-        if key == 32:  # Space key
+        if keycode == 32:  # Space key
             # If we're in the game screen, delegate to its handler
             if hasattr(self, 'root') and self.root.current == 'game':
                 game_screen = self.root.get_screen('game')

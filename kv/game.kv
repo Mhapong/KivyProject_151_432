@@ -1,43 +1,208 @@
 <GameScreen>:
     canvas.before:
         Color:
-            rgba: 0, 0, 0, 1  # Set background to black to avoid white squares
-            
+            rgba: 0, 0, 0, 1  # Set background to black
+
+    # Main FloatLayout for game elements
     FloatLayout:
         id: game_screen
 
-        # Background Image
+        # Background Image with parallax effect
         Image:
             id: background
             source: 'assets/image/map_1.jpg'
-            size_hint: (1, 1)
+            size_hint: (1.2, 1.2)  # Slightly larger than screen for parallax effect
             allow_stretch: True
             keep_ratio: False
+            pos_hint: {'center_x': 0.5, 'center_y': 0.5}
 
-        # Game World Widget
+        # Game World Widget - where gameplay happens
         Widget:
             id: game_world
-            canvas:
-                # No default canvas instructions here
+            size_hint: 1, 1
+            pos_hint: {'x': 0, 'y': 0}
 
-            # Player
+            # Player character
             Player:
                 id: player
-                source: root.player_skin  # Use root.player_skin to refer to the property in the GameScreen class
+                source: root.player_skin
                 size_hint: None, None
-                size: 50, 50
+                size: dp(50), dp(50)
                 center_x: self.parent.width / 2
-                y: 150  # Initial y position
+                y: dp(150)  # Initial y position
                 canvas.before:
                     PushMatrix
                     Rotate:
-                        angle: -self.rotation  # Use positive rotation value
+                        angle: -self.rotation  # Fixed: Use positive rotation
                         axis: 0, 0, 1
                         origin: self.center
                 canvas.after:
                     PopMatrix
 
-            # Ground Elements
-            Image:
-                id: ground1
-                source: 'assets/image/ground.png'
+        # Game UI overlay - appears during gameplay
+        BoxLayout:
+            id: game_ui_overlay
+            orientation: 'vertical'
+            size_hint: 1, 1
+            pos_hint: {'x': 0, 'y': 0}
+
+            # Top bar with level info and pause button
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint_y: None
+                height: dp(50)
+                padding: [dp(10), dp(5)]
+                canvas.before:
+                    Color:
+                        rgba: 0, 0, 0, 0.5
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+
+                # Level info
+                Label:
+                    id: level_info
+                    text: root.level_data.get('name', 'Level') if hasattr(root, 'level_data') else 'Level'
+                    font_size: sp(18)
+                    size_hint_x: 0.7
+                    halign: 'left'
+                    text_size: self.size
+                    valign: 'center'
+                    bold: True
+
+                # Attempt counter
+                Label:
+                    id: attempt_counter
+                    text: f"Attempt: {root.attempt_count}" if hasattr(root, 'attempt_count') else "Attempt: 1"
+                    font_size: sp(16)
+                    size_hint_x: 0.15
+                    color: 1, 1, 1, 0.9
+
+                # Pause button
+                Button:
+                    id: pause_button
+                    size_hint: None, None
+                    size: dp(40), dp(40)
+                    background_normal: ''
+                    background_color: 0, 0, 0, 0
+                    on_release: root.toggle_pause() if hasattr(root, 'toggle_pause') else None
+                    
+                    canvas:
+                        Color:
+                            rgba: 0.9, 0.9, 0.9, 0.8
+                        Line:
+                            rectangle: [self.x + dp(12), self.y + dp(10), dp(6), dp(20)]
+                            width: dp(2)
+                        Line:
+                            rectangle: [self.x + dp(22), self.y + dp(10), dp(6), dp(20)]
+                            width: dp(2)
+
+            # Spacer to push content to edges
+            Widget:
+                size_hint_y: 0.9
+
+            # Bottom hint area - shows control hints
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint_y: None
+                height: dp(40)
+                padding: [dp(20), dp(5)]
+                opacity: 0.5  # Semi-transparent
+                
+                # Space/click to jump hint
+                Label:
+                    text: "SPACE or CLICK to jump"
+                    font_size: sp(14)
+                    size_hint_x: 0.5
+                    halign: 'left'
+                    text_size: self.size
+                    valign: 'center'
+                    color: 0.9, 0.9, 0.9, 0.8
+                
+                # Escape to pause hint
+                Label:
+                    text: "ESC to pause"
+                    font_size: sp(14)
+                    size_hint_x: 0.5
+                    halign: 'right'
+                    text_size: self.size
+                    valign: 'center'
+                    color: 0.9, 0.9, 0.9, 0.8
+
+        # Pause menu overlay - hidden by default
+        FloatLayout:
+            id: pause_menu
+            size_hint: 1, 1
+            opacity: 0
+            disabled: True
+            
+            canvas.before:
+                Color:
+                    rgba: 0, 0, 0, 0.7
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint: 0.5, 0.7
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                spacing: dp(15)
+                padding: dp(20)
+                
+                canvas.before:
+                    Color:
+                        rgba: 0.15, 0.15, 0.2, 0.95
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(15)]
+                
+                # Pause menu title
+                Label:
+                    text: "PAUSED"
+                    font_size: sp(28)
+                    size_hint_y: 0.2
+                    bold: True
+                
+                # Buttons container
+                BoxLayout:
+                    orientation: 'vertical'
+                    spacing: dp(10)
+                    size_hint_y: 0.6
+                    
+                    # Resume button
+                    Button:
+                        text: "Resume"
+                        size_hint_y: None
+                        height: dp(50)
+                        background_normal: ''
+                        background_color: 0.2, 0.6, 0.2, 1
+                        on_release: root.resume_game() if hasattr(root, 'resume_game') else None
+                    
+                    # Retry button
+                    Button:
+                        text: "Retry Level"
+                        size_hint_y: None
+                        height: dp(50)
+                        background_normal: ''
+                        background_color: 0.6, 0.6, 0.2, 1
+                        on_release: root.retry_level(self) if hasattr(root, 'retry_level') else None
+                    
+                    # Level selection button
+                    Button:
+                        text: "Level Selection"
+                        size_hint_y: None
+                        height: dp(50)
+                        background_normal: ''
+                        background_color: 0.2, 0.2, 0.6, 1
+                        on_release: root.go_to_stage_selection() if hasattr(root, 'go_to_stage_selection') else None
+                    
+                    # Main menu button
+                    Button:
+                        text: "Main Menu"
+                        size_hint_y: None
+                        height: dp(50)
+                        background_normal: ''
+                        background_color: 0.6, 0.2, 0.2, 1
+                        on_release: root.go_to_home() if hasattr(root, 'go_to_home') else None

@@ -10,14 +10,17 @@ from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
 from kivy.core.audio import SoundLoader
-from kivy.properties import StringProperty  # Add this import
+from kivy.properties import StringProperty, NumericProperty, BooleanProperty  # Add these imports
+from kivy.animation import Animation  # Add this import
 from game_logic import Player, Floor, Platform, Spike, BoostPad, FinishLine
 import json
 import os  # Add this import
 
 class GameScreen(Screen):
-    # Add this property
+    # Add these properties
     player_skin = StringProperty('assets/image/default_skin.png')  # Default skin
+    attempt_count = NumericProperty(1)
+    paused = BooleanProperty(False)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -116,7 +119,7 @@ class GameScreen(Screen):
     
     def _on_key_down(self, instance, keyboard, keycode, text, modifiers):
         # Print more detailed debug info to help diagnose keyboard issues
-        print(f"Key pressed: {keycode}, text: {text}, modifiers: {modifiers}")
+        print(f"Game screen key handler: {keycode}, text: {text}, modifiers: {modifiers}")
         
         # Handle both tuple and direct code formats
         if isinstance(keycode, tuple):
@@ -125,14 +128,13 @@ class GameScreen(Screen):
             code = keycode
             key = None
         
-        # Check for space bar in various formats
-        if code == 32 or key == 'spacebar' or key == 'space':
-            print("Spacebar detected! Player on_ground:", self.player.on_ground)
-            
-            # Force a jump if the game is active
-            if self.game_loop and self.player:
-                # Jump handling
-                self.player.jump()
+        # Check for Escape key to toggle pause
+        if code == 27 or key == 'escape':
+            print("ESC key detected, toggling pause")
+            self.toggle_pause()
+            return True
+        
+        return False  # Let other handlers process this key
 
     def _on_mouse_down(self, instance, x, y, button, modifiers):
         print(f"Mouse click detected at {x}, {y}, button: {button}")
@@ -214,10 +216,24 @@ class GameScreen(Screen):
         self.popup = Popup(title="Congratulations!", content=layout, size_hint=(0.5, 0.5), auto_dismiss=False)
         self.popup.open()
         
-    def retry_level(self, instance):
+    def retry_level(self, instance=None):
         if hasattr(self, 'popup') and self.popup:
-            self.popup.dismiss()  # Dismiss popup first
-            self.popup = None  # Set to None to ensure it's fully cleared
+            self.popup.dismiss()
+            self.popup = None
+        
+        # Increment attempt counter when retrying
+        self.attempt_count += 1
+        
+        # Update UI to show new attempt count
+        if hasattr(self.ids, 'attempt_counter'):
+            self.ids.attempt_counter.text = f"Attempt: {self.attempt_count}"
+        
+        # Hide pause menu if active
+        if self.paused:
+            pause_menu = self.ids.pause_menu
+            pause_menu.opacity = 0
+            pause_menu.disabled = True
+            self.paused = False
         
         if self.game_loop:
             self.game_loop.cancel()
@@ -246,6 +262,7 @@ class GameScreen(Screen):
         # Start new game loop
         self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)
         if self.background_music:
+            self.background_music.volume = 1.0
             self.background_music.play()
         
     def go_to_next_level(self, instance):
@@ -300,6 +317,9 @@ class GameScreen(Screen):
         self.setup_level()
         
     def setup_level(self):
+        # Reset attempt counter when starting a new level
+        self.attempt_count = 1
+        
         if self.game_loop:
             self.game_loop.cancel()
             self.game_loop = None
@@ -308,6 +328,15 @@ class GameScreen(Screen):
         if hasattr(self, 'level_file'):
             self.load_level(self.level_file)
             
+            # Update level name in UI
+            if hasattr(self.ids, 'level_info') and hasattr(self, 'level_data'):
+                level_name = self.level_data.get('name', 'Level')
+                self.ids.level_info.text = level_name
+                
+            # Update attempt counter in UI
+            if hasattr(self.ids, 'attempt_counter'):
+                self.ids.attempt_counter.text = f"Attempt: {self.attempt_count}"
+                
             if self.player:
                 # Position player at proper height
                 if self.platforms:
@@ -330,10 +359,17 @@ class GameScreen(Screen):
                 self.player.opacity = 1
                 self.player.source = self.player_skin
                 self.player.original_source = self.player_skin
+                
+                # Ensure pause menu is hidden
+                if hasattr(self.ids, 'pause_menu'):
+                    self.ids.pause_menu.opacity = 0
+                    self.ids.pause_menu.disabled = True
+                    self.paused = False
         
         # Start game loop
         self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)
         if self.background_music:
+            self.background_music.volume = 1.0
             self.background_music.play()
     
     def load_level(self, level_file):
@@ -480,3 +516,44 @@ class GameScreen(Screen):
         """Ensure game_world covers the entire screen when resized"""
         if hasattr(self, 'game_world') and self.game_world:
             self.game_world.size = self.size
+
+    def toggle_pause(self):
+        if self.game_loop:
+            if not self.paused:
+                # Pause the game
+                self.paused = True
+                self.old_game_loop = self.game_loop
+                self.game_loop.cancel()
+                self.game_loop = None
+                
+                # Show pause menu
+                pause_menu = self.ids.pause_menu
+                pause_menu.disabled = False
+                anim = Animation(opacity=1, duration=0.3)
+                anim.start(pause_menu)
+                
+                # Pause music
+                if self.background_music:
+                    self.background_music.volume = 0.3
+            else:
+                self.resume_game()
+
+    def resume_game(self):
+        # Hide pause menu first
+        pause_menu = self.ids.pause_menu
+        anim = Animation(opacity=0, duration=0.3)
+        
+        def on_complete(*args):
+            pause_menu.disabled = True
+            
+            # Unpause the game
+            self.paused = False
+            if not self.game_loop:
+                self.game_loop = Clock.schedule_interval(self.update, 1.0/60.0)
+            
+            # Resume music
+            if self.background_music:
+                self.background_music.volume = 1.0
+        
+        anim.bind(on_complete=on_complete)
+        anim.start(pause_menu)
