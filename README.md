@@ -992,6 +992,519 @@ def go_to_next_level(self, instance):
 8. **ระบบหยุดชั่วคราว**: อนุญาตให้ผู้เล่นหยุดเกมชั่วคราวและกลับมาเล่นได้
    กลไกเหล่านี้ทำงานร่วมกันเพื่อสร้างประสบการณ์การเล่นเกมที่มีความลื่นไหลและตอบสนองต่อการกระทำของผู้เล่น
 
+# สรุปการทำงานของคลาสต่างๆ ใน game_logic.py
+
+## คลาส Player
+
+- คลาส Player เป็นตัวละครหลักที่ผู้เล่นควบคุม มีกลไกการเคลื่อนไหวและการตรวจสอบการชนกัน
+
+### การเริ่มต้น
+
+```python
+def __init__(self, **kwargs):
+    super().__init__(**kwargs)
+    # กำหนดค่าฟิสิกส์แบบ Geometry Dash
+    self.gravity = -2800        # เพิ่มค่าแรงโน้มถ่วงให้ตกเร็วขึ้น
+    self.jump_strength = 880    # ค่าความสูงในการกระโดดที่เหมาะสม
+    self.velocity = 0
+    self.moving_speed = 500     # ความเร็วในการเคลื่อนที่คงที่
+    self.world_x = 0
+    self.is_jumping = False
+    self.on_ground = True
+    self.rotation = 0
+    self.opacity = 1
+    self.original_source = kwargs.get('source', '')
+    self.source = self.original_source
+    self.jump_time = 0          # เก็บเวลาตั้งแต่กระโดดครั้งล่าสุด
+    self.total_jump_time = 0.55 # เวลาโดยประมาณสำหรับการกระโดดหนึ่งครั้ง
+```
+
+### การอัพเดต
+
+```python
+def update(self, dt, obstacles=None, platforms=None, finish_line=None):
+    # เก็บตำแหน่งก่อนหน้าสำหรับการแก้ไขการชน
+    old_x = self.x
+    old_y = self.y
+
+    # ใช้แรงโน้มถ่วง - แรงมากขึ้นเพื่อการตกที่รวดเร็วเหมือน GD
+    self.velocity += self.gravity * dt
+
+    # ติดตามเวลากระโดดเพื่อคำนวณการหมุน
+    if not self.on_ground:
+        self.jump_time += dt
+
+    # ความเร็วสูงสุด - GD มีการจำกัดความเร็วที่ค่อนข้างชัดเจน
+    if (self.velocity < -1200):
+        self.velocity = -1200
+
+    # อัพเดตตำแหน่ง
+    self.y += self.velocity * dt
+
+    # การตรวจสอบการชนกับแพลตฟอร์ม
+    if platforms:
+        for platform in platforms:
+            # ตรวจสอบการชนพื้นฐานโดยมีความคลาดเคลื่อนที่กว้างขึ้นด้านข้าง
+            x_overlap = (self.x + self.width * 0.8 > platform.x and
+                         self.x + self.width * 0.2 < platform.x + platform.width)
+
+            y_above_platform = old_y >= platform.top - 5
+            y_intersect_platform = self.y < platform.top + 10
+
+            # การชนด้านบน - ทำงานเฉพาะเมื่อกำลังตกลงมา
+            if x_overlap and y_above_platform and y_intersect_platform and self.velocity < 0:
+                self.y = platform.top  # วางผู้เล่นบนแพลตฟอร์ม
+                self.velocity = 0
+                self.on_ground = True
+                self.is_jumping = False
+                self.jump_time = 0
+
+                # ปรับการหมุนให้ใกล้เคียงกับ 90 องศาเมื่อลงพื้น - สไตล์ Geometry Dash
+                target_angle = round(self.rotation / 90) * 90
+                self.rotation = target_angle
+
+            # การชนด้านข้าง - ทำให้ผู้เล่นตายเมื่อชนด้านข้างแพลตฟอร์ม
+            elif (not y_above_platform and
+                  self.y + self.height * 0.3 > platform.y and
+                  self.y < platform.y + platform.height * 0.7):
+
+                # ข้ามการชนด้านข้างเมื่อเริ่มเกม
+                if platform.x < 400 and self.world_x < 200:
+                    pass
+                else:
+                    # ตรวจสอบว่าผู้เล่นพยายามเคลื่อนที่เข้าหาแพลตฟอร์มจากด้านข้างหรือไม่
+                    if (self.x + self.width > platform.x and
+                        self.x + self.width < platform.x + 20):  # การชนด้านซ้าย
+                        return True  # ชนแพลตฟอร์มจากด้านข้าง = ตาย
+
+                    elif (self.x < platform.x + platform.width and
+                          self.x > platform.x + platform.width - 20):  # การชนด้านขวา
+                        return True  # ชนแพลตฟอร์มจากด้านข้าง = ตาย
+
+    # การหมุนสไตล์ Geometry Dash - หมุน 360 องศาอย่างราบรื่นระหว่างกระโดด
+    if not self.on_ground:
+        # คำนวณการหมุนตามความก้าวหน้าของการกระโดด
+        jump_progress = min(1.0, self.jump_time / self.total_jump_time)
+
+        # หมุนตามโค้งการกระโดด - ไม่เป็นเส้นตรงเพื่อให้ตรงกับส่วนโค้ง
+        # ครึ่งแรกของการกระโดดหมุนช้ากว่า ครึ่งหลังเร็วกว่า
+        if jump_progress <= 0.5:
+            # การหมุนช้ากว่าระหว่างการขึ้น (0-180 องศา)
+            self.rotation = jump_progress * 180 * 2
+        else:
+            # การหมุนเร็วกว่าระหว่างการลง (180-360 องศา)
+            self.rotation = 180 + (jump_progress - 0.5) * 180 * 2
+
+        # รักษาการหมุนระหว่าง 0-360
+        while self.rotation >= 360:
+            self.rotation -= 360
+
+    # เงื่อนไขการตาย
+    if self.y < 0:
+        return True
+
+    # ตรวจสอบการชนกับอุปสรรค
+    if obstacles:
+        for obstacle in obstacles:
+            if isinstance(obstacle, Spike):
+                if obstacle.collide_with_player(self):
+                    return True
+            elif isinstance(obstacle, BoostPad) and self.collide_widget(obstacle):
+                # เอฟเฟกต์บูสต์ด้วยฟิสิกส์แบบ GD
+                self.velocity = self.jump_strength * 1.5
+                self.on_ground = False
+                self.is_jumping = True
+                self.jump_time = 0  # รีเซ็ตเวลากระโดดเพื่อการหมุนที่ถูกต้อง
+
+    # ตรวจสอบเส้นชัย
+    if finish_line and isinstance(finish_line, FinishLine) and finish_line.check_collision(self):
+        return "finish"
+
+    return False
+```
+
+```python
+def update(self, dt, obstacles=None, platforms=None, finish_line=None):
+    # เก็บตำแหน่งก่อนหน้าสำหรับการแก้ไขการชน
+    old_x = self.x
+    old_y = self.y
+
+    # ใช้แรงโน้มถ่วง - แรงมากขึ้นเพื่อการตกที่รวดเร็วเหมือน GD
+    self.velocity += self.gravity * dt
+
+    # ติดตามเวลากระโดดเพื่อคำนวณการหมุน
+    if not self.on_ground:
+        self.jump_time += dt
+
+    # ความเร็วสูงสุด - GD มีการจำกัดความเร็วที่ค่อนข้างชัดเจน
+    if (self.velocity < -1200):
+        self.velocity = -1200
+
+    # อัพเดตตำแหน่ง
+    self.y += self.velocity * dt
+
+    # การตรวจสอบการชนกับแพลตฟอร์ม
+    if platforms:
+        for platform in platforms:
+            # ตรวจสอบการชนพื้นฐานโดยมีความคลาดเคลื่อนที่กว้างขึ้นด้านข้าง
+            x_overlap = (self.x + self.width * 0.8 > platform.x and
+                         self.x + self.width * 0.2 < platform.x + platform.width)
+
+            y_above_platform = old_y >= platform.top - 5
+            y_intersect_platform = self.y < platform.top + 10
+
+            # การชนด้านบน - ทำงานเฉพาะเมื่อกำลังตกลงมา
+            if x_overlap and y_above_platform and y_intersect_platform and self.velocity < 0:
+                self.y = platform.top  # วางผู้เล่นบนแพลตฟอร์ม
+                self.velocity = 0
+                self.on_ground = True
+                self.is_jumping = False
+                self.jump_time = 0
+
+                # ปรับการหมุนให้ใกล้เคียงกับ 90 องศาเมื่อลงพื้น - สไตล์ Geometry Dash
+                target_angle = round(self.rotation / 90) * 90
+                self.rotation = target_angle
+
+            # การชนด้านข้าง - ทำให้ผู้เล่นตายเมื่อชนด้านข้างแพลตฟอร์ม
+            elif (not y_above_platform and
+                  self.y + self.height * 0.3 > platform.y and
+                  self.y < platform.y + platform.height * 0.7):
+
+                # ข้ามการชนด้านข้างเมื่อเริ่มเกม
+                if platform.x < 400 and self.world_x < 200:
+                    pass
+                else:
+                    # ตรวจสอบว่าผู้เล่นพยายามเคลื่อนที่เข้าหาแพลตฟอร์มจากด้านข้างหรือไม่
+                    if (self.x + self.width > platform.x and
+                        self.x + self.width < platform.x + 20):  # การชนด้านซ้าย
+                        return True  # ชนแพลตฟอร์มจากด้านข้าง = ตาย
+
+                    elif (self.x < platform.x + platform.width and
+                          self.x > platform.x + platform.width - 20):  # การชนด้านขวา
+                        return True  # ชนแพลตฟอร์มจากด้านข้าง = ตาย
+
+    # การหมุนสไตล์ Geometry Dash - หมุน 360 องศาอย่างราบรื่นระหว่างกระโดด
+    if not self.on_ground:
+        # คำนวณการหมุนตามความก้าวหน้าของการกระโดด
+        jump_progress = min(1.0, self.jump_time / self.total_jump_time)
+
+        # หมุนตามโค้งการกระโดด - ไม่เป็นเส้นตรงเพื่อให้ตรงกับส่วนโค้ง
+        # ครึ่งแรกของการกระโดดหมุนช้ากว่า ครึ่งหลังเร็วกว่า
+        if jump_progress <= 0.5:
+            # การหมุนช้ากว่าระหว่างการขึ้น (0-180 องศา)
+            self.rotation = jump_progress * 180 * 2
+        else:
+            # การหมุนเร็วกว่าระหว่างการลง (180-360 องศา)
+            self.rotation = 180 + (jump_progress - 0.5) * 180 * 2
+
+        # รักษาการหมุนระหว่าง 0-360
+        while self.rotation >= 360:
+            self.rotation -= 360
+
+    # เงื่อนไขการตาย
+    if self.y < 0:
+        return True
+
+    # ตรวจสอบการชนกับอุปสรรค
+    if obstacles:
+        for obstacle in obstacles:
+            if isinstance(obstacle, Spike):
+                if obstacle.collide_with_player(self):
+                    return True
+            elif isinstance(obstacle, BoostPad) and self.collide_widget(obstacle):
+                # เอฟเฟกต์บูสต์ด้วยฟิสิกส์แบบ GD
+                self.velocity = self.jump_strength * 1.5
+                self.on_ground = False
+                self.is_jumping = True
+                self.jump_time = 0  # รีเซ็ตเวลากระโดดเพื่อการหมุนที่ถูกต้อง
+
+    # ตรวจสอบเส้นชัย
+    if finish_line and isinstance(finish_line, FinishLine) and finish_line.check_collision(self):
+        return "finish"
+
+    return False
+```
+
+### การกระโดด
+
+```python
+def jump(self):
+    # กระโดดได้เฉพาะเมื่ออยู่บนพื้นเท่านั้น
+    if self.on_ground:
+        self.velocity = self.jump_strength
+        self.on_ground = False
+        self.is_jumping = True
+        self.jump_time = 0  # รีเซ็ตเวลากระโดด
+        self.opacity = 1
+        self.source = self.original_source
+```
+
+### คลาส Spike
+
+คลาส Spike เป็นอุปสรรคหลักที่ผู้เล่นต้องหลบหลีก มีรูปร่างเป็นสามเหลี่ยมและมีการตรวจสอบการชน
+
+#### การเริ่มต้น
+
+```python
+def __init__(self, pos, **kwargs):
+    super().__init__(**kwargs)
+    self.size = (30, 30)  # รักษาขนาดเดิม
+    self.pos = pos
+    self.initial_x = pos[0]  # เก็บตำแหน่ง x เริ่มต้น
+    # คำนวณจุดของสามเหลี่ยม
+    self.triangle_points = self._calculate_triangle_points()
+
+    with self.canvas:
+        Color(1, 0, 0)  # สีแดง
+        self.triangle = Triangle(points=self.triangle_points)
+    self.bind(pos=self._update_shape, size=self._update_shape)
+
+```
+
+#### การตรวจสอบการชน
+
+```python
+def collide_with_player(self, player):
+    # ดึงฮิตบ็อกซ์ของผู้เล่น (เล็กกว่าขนาดที่มองเห็นเล็กน้อย)
+    px = player.x + player.width * 0.2  # 20% เข้ามาจากซ้าย
+    py = player.y + player.height * 0.2  # 20% เข้ามาจากล่าง
+    pw = player.width * 0.6  # 60% ของความกว้างเดิม
+    ph = player.height * 0.6  # 60% ของความสูงเดิม
+
+    # ตรวจสอบว่ามุมใดๆ ของฮิตบ็อกซ์ผู้เล่นอยู่ในสามเหลี่ยมหรือไม่
+    player_points = [
+        (px, py),                # มุมล่างซ้าย
+        (px + pw, py),          # มุมล่างขวา
+        (px, py + ph),          # มุมบนซ้าย
+        (px + pw, py + ph)      # มุมบนขวา
+    ]
+
+    # ตรวจสอบจุดกึ่งกลางด้วย
+    player_points.append((px + pw/2, py + ph/2))
+
+    for point in player_points:
+        if self._point_in_triangle(point[0], point[1]):
+            return True
+    return False
+```
+
+### คลาส RotatingSpike
+
+- คลาส RotatingSpike เป็นอุปสรรคประเภทหนามที่สามารถหมุนได้ มีการตรวจสอบการชนเช่นเดียวกับ Spike
+
+#### การเริ่มต้น
+
+```python
+def __init__(self, pos, angle=180, **kwargs):
+    super().__init__(**kwargs)
+    self.size = (30, 30)  # ขนาดเท่ากับหนามปกติ
+    self.pos = pos
+    self.angle = angle  # ค่าเริ่มต้นที่ 180 องศา (คว่ำลง)
+    self.initial_x = pos[0]  # เก็บตำแหน่ง x เริ่มต้น
+    # คำนวณจุดของสามเหลี่ยมตามมุม
+    self.triangle_points = self._calculate_triangle_points()
+
+    with self.canvas:
+        Color(1, 0.5, 0)  # สีส้มเพื่อแยกจากหนามปกติ
+        self.triangle = Triangle(points=self.triangle_points)
+    self.bind(pos=self._update_shape, size=self._update_shape)
+
+```
+
+#### การคำนวณตำแหน่งสามเหลี่ยมตามมุม
+
+```python
+def _calculate_triangle_points(self):
+    # สร้างสามเหลี่ยมด้วยการหมุนที่ระบุ
+    if self.angle == 180:  # หนามคว่ำลง
+        return [
+            self.x + self.width * 0.5, self.y,                # จุดล่าง
+            self.x + self.width * 0.1, self.y + self.height,  # มุมบนซ้าย
+            self.x + self.width * 0.9, self.y + self.height   # มุมบนขวา
+        ]
+    elif self.angle == 90:  # ชี้ไปทางขวา
+        return [
+            self.x + self.width, self.y + self.height * 0.5,  # จุดขวา
+            self.x, self.y + self.height * 0.1,               # มุมล่างซ้าย
+            self.x, self.y + self.height * 0.9                # มุมบนซ้าย
+        ]
+    elif self.angle == 270:  # ชี้ไปทางซ้าย
+        return [
+            self.x, self.y + self.height * 0.5,               # จุดซ้าย
+            self.x + self.width, self.y + self.height * 0.1,  # มุมล่างขวา
+            self.x + self.width, self.y + self.height * 0.9   # มุมบนขวา
+        ]
+    else:  # ค่าเริ่มต้น - ชี้ขึ้น (0 องศา)
+        return [
+            self.x + self.width * 0.5, self.y + self.height,  # จุดบน
+            self.x + self.width * 0.1, self.y,                # มุมล่างซ้าย
+            self.x + self.width * 0.9, self.y                 # มุมล่างขวา
+        ]
+
+```
+
+### คลาส BoostPad
+
+####คลาส BoostPad เป็นแพดบูสต์ที่ช่วยในการกระโดดให้สูงขึ้น
+
+```python
+def __init__(self, pos, **kwargs):
+    super().__init__(**kwargs)
+    self.size = (40, 20)
+    self.pos = pos
+    self.initial_x = pos[0]  # เก็บตำแหน่ง x เริ่มต้น
+    with self.canvas:
+        Color(1, 1, 0)  # สีเหลือง
+        self.rect = Rectangle(pos=self.pos, size=self.size)
+    self.bind(pos=self._update_rect)
+
+```
+
+###คลาส FinishLine
+
+- คลาส FinishLine คือเส้นชัยที่ผู้เล่นต้องไปให้ถึงเพื่อผ่านด่าน
+
+#### การเริ่มต้น
+
+```python
+def __init__(self, pos, **kwargs):
+    super().__init__(**kwargs)
+    self.size = (100, Window.height)  # กว้างขึ้นและสูงเท่ากับความสูงของหน้าต่าง
+    self.pos = pos
+
+    # สร้างด้วยลักษณะที่มองเห็นได้ชัดเจนกว่า
+    self.redraw_canvas()
+    self.bind(pos=self._update_rect)
+
+```
+
+#### การวาดเส้นชัย
+
+```python
+def redraw_canvas(self):
+    with self.canvas:
+        # สีที่มองเห็นได้ชัดเจนยิ่งขึ้น
+        Color(0, 1, 0, 0.9)  # สีเขียวสว่างมากพร้อมความทึบสูง
+        Rectangle(pos=self.pos, size=self.size)
+
+        # รูปแบบตารางหมากรุกขนาดใหญ่เพื่อการมองเห็นที่ดีขึ้น
+        Color(1, 1, 1, 1.0)  # สีขาวล้วน
+        checker_size = 50  # ตารางใหญ่ขึ้น
+        rows = int(Window.height / checker_size)
+        cols = int(self.size[0] / checker_size)
+
+        for row in range(rows):
+            for col in range(cols):
+                if (row + col) % 2 == 0:
+                    Rectangle(
+                        pos=(self.pos[0] + col * checker_size,
+                             self.pos[1] + row * checker_size),
+                        size=(checker_size, checker_size)
+                    )
+
+        # ขอบที่หนาขึ้น
+        Color(0, 0, 0, 1)
+        Line(rectangle=(self.pos[0], self.pos[1], self.size[0], self.size[1]), width=6)
+
+```
+
+#### การตรวจสอบการชนกับเส้นชัย
+
+```python
+def check_collision(self, player):
+    # การตรวจสอบการชนที่ผ่อนปรนมากขึ้นโดยเฉพาะสำหรับด่าน 3
+    if player.x > self.x - 50 and player.x < self.x + self.width + 50:
+        print("ตรวจพบการชนกับเส้นชัย!")
+        return True
+    return False
+```
+
+###คลาส Platform
+####คลาส Platform เป็นแพลตฟอร์มที่ผู้เล่นสามารถยืนและเคลื่อนที่ไปได้
+
+```python
+def __init__(self, pos, size, **kwargs):
+    super().__init__(**kwargs)
+    self.pos = pos
+    self.size = size
+    with self.canvas:
+        Color(0.5, 0.5, 0.5)  # สีเทา
+        self.rect = Rectangle(pos=self.pos, size=self.size)
+    self.bind(pos=self._update_rect)
+
+```
+
+### คลาส SpeedPortal
+
+#### คลาส SpeedPortal เป็นพอร์ทัลที่เปลี่ยนความเร็วของผู้เล่นเมื่อผ่านเข้าไป
+
+```python
+def __init__(self, pos, speed_multiplier=1.5, **kwargs):
+    super().__init__(**kwargs)
+    self.size = (40, 60)
+    self.pos = pos
+    self.speed_multiplier = speed_multiplier
+    self.initial_x = pos[0]
+
+    # สีตามความเร็ว
+    if speed_multiplier < 1.0:
+        portal_color = (0, 0, 1)  # น้ำเงินสำหรับช้าลง
+    elif speed_multiplier < 2.0:
+        portal_color = (1, 1, 0)  # เหลืองสำหรับความเร็วปานกลาง
+    else:
+        portal_color = (1, 0, 0)  # แดงสำหรับเร็วขึ้น
+
+    with self.canvas:
+        Color(*portal_color)
+        self.rect = Rectangle(pos=self.pos, size=self.size)
+        # เพิ่มรายละเอียดเพื่อให้ดูเหมือนพอร์ทัล
+        Color(1, 1, 1, 0.5)  # สีขาวพร้อมความโปร่งใส
+        Line(ellipse=(self.x + 5, self.y + 5, self.width - 10, self.height - 10), width=2)
+
+```
+
+GitHub Copilot
+สรุปการทำงานของคลาสต่างๆ ใน game_logic.py
+คลาส Player
+คลาส Player เป็นตัวละครหลักที่ผู้เล่นควบคุม มีกลไกการเคลื่อนไหวและการตรวจสอบการชนกัน
+
+การเริ่มต้น
+การอัพเดต
+การกระโดด
+คลาส Spike
+คลาส Spike เป็นอุปสรรคหลักที่ผู้เล่นต้องหลบหลีก มีรูปร่างเป็นสามเหลี่ยมและมีการตรวจสอบการชน
+
+การเริ่มต้น
+การตรวจสอบการชน
+คลาส RotatingSpike
+คลาส RotatingSpike เป็นอุปสรรคประเภทหนามที่สามารถหมุนได้ มีการตรวจสอบการชนเช่นเดียวกับ Spike
+
+การเริ่มต้น
+การคำนวณตำแหน่งสามเหลี่ยมตามมุม
+คลาส BoostPad
+คลาส BoostPad เป็นแพดบูสต์ที่ช่วยในการกระโดดให้สูงขึ้น
+
+คลาส FinishLine
+คลาส FinishLine คือเส้นชัยที่ผู้เล่นต้องไปให้ถึงเพื่อผ่านด่าน
+
+การเริ่มต้น
+การวาดเส้นชัย
+การตรวจสอบการชนกับเส้นชัย
+คลาส Platform
+คลาส Platform เป็นแพลตฟอร์มที่ผู้เล่นสามารถยืนและเคลื่อนที่ไปได้
+
+คลาส SpeedPortal
+คลาส SpeedPortal เป็นพอร์ทัลที่เปลี่ยนความเร็วของผู้เล่นเมื่อผ่านเข้าไป
+
+####สรุปการทำงานหลัก
+
+1.  การเคลื่อนไหวของผู้เล่น: ผู้เล่นเคลื่อนไหวตามฟิสิกส์คล้าย Geometry Dash ด้วยการกระโดดและการหมุน 360 องศาระหว่างการกระโดด
+2.  การตรวจสอบการชน: ตรวจสอบการชนระหว่างผู้เล่นกับแพลตฟอร์ม สิ่งกีดขวาง และเส้นชัยโดยใช้เทคนิคต่างๆ เช่น การตรวจสอบจุดในสามเหลี่ยม
+3.  อุปสรรคหลากหลาย: มีอุปสรรคหลายประเภทเช่น Spike (หนามปกติ), RotatingSpike (หนามที่หมุนได้), BoostPad (แพดกระโดด)
+4.  การควบคุมความเร็ว: SpeedPortal ช่วยปรับความเร็วของผู้เล่น ทำให้เกมมีความหลากหลายมากขึ้น
+5.  เส้นชัย: FinishLine เป็นองค์ประกอบที่แสดงจุดสิ้นสุดของด่านเมื่อผู้เล่นไปถึง
+    กลไกเหล่านี้รวมกันเพื่อสร้างการเล่นเกมแบบ Geometry Dash ที่ต้องใช้ความแม่นยำและการจังหวะในการกระโดดหลบสิ่งกีดขวางต่างๆ เพื่อไปให้ถึงเส้นชัย
+
 ## เครดิต
 
 - พัฒนาโดย:
