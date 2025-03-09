@@ -3,44 +3,181 @@
         Rectangle:
             pos: self.pos
             size: self.size
-            source: 'assets/image/background.png'  # Path to your PNG background image
-            
+            source: 'assets/image/background.png'  # Background image
+        
+        # Add gradient overlay to darken the background slightly
+        Color:
+            rgba: 0, 0, 0, 0.3
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    
+    # Main content container with animation
     BoxLayout:
+        id: main_layout
         orientation: 'vertical'
-        padding: 50
-        spacing: 20
-
-        Label:
-            text: 'GeoDash Tee Barn'
-            font_size: '48sp'
-            bold: True
-            color: 1, 1, 1, 1
-            size_hint_y: 0.2
-
-        Button:
-            text: 'Play'
-            size_hint: 0.3, 0.1
-            pos_hint: {'center_x': 0.5}
-            font_size: '24sp'
-            on_press: root.go_to_level_selection(self)
+        padding: dp(50)
+        spacing: dp(20)
+        opacity: 0
         
-        Button:
-            text: 'Select Skin 🎨'
-            size_hint: 0.3, 0.1
-            pos_hint: {'center_x': 0.5}
-            font_size: '24sp'
-            on_press: root.go_to_skin_selector(self)
+        # Title with shadow effect
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 0.4
+            
+            # Shadow layer
+            Label:
+                text: 'GeoDash Tee Barn'
+                font_size: '52sp'
+                bold: True
+                color: 0, 0, 0, 0.5
+                size_hint_y: None
+                height: self.texture_size[1]
+                pos_hint: {'center_x': 0.501, 'center_y': 0.499}
+            
+            # Main title
+            Label:
+                text: 'GeoDash Tee Barn'
+                font_size: '52sp'
+                bold: True
+                color: 0.9, 0.9, 1, 1
+                size_hint_y: None
+                height: self.texture_size[1]
+                pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                
+            # Subtitle
+            Label:
+                text: 'Jump your way to victory!'
+                font_size: '20sp'
+                italic: True
+                color: 0.8, 0.8, 1, 0.9
+                size_hint_y: None
+                height: self.texture_size[1]
 
-        Button:
-            text: 'Unlock All Levels 🔓'
-            size_hint: 0.3, 0.1
-            pos_hint: {'center_x': 0.5}
-            font_size: '24sp'
-            on_press: root.unlock_all_levels(self)
-        
-        Button:
-            text: 'Exit'
-            size_hint: 0.3, 0.1
-            pos_hint: {'center_x': 0.5}
-            font_size: '24sp'
-            on_press: app.stop()
+        # Menu options with fancy effects
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: dp(15)
+            size_hint_y: 0.6
+            padding: [dp(50), 0]
+            
+            # Play button with gradient
+            Button:
+                size_hint: 0.7, None
+                height: dp(60)
+                pos_hint: {'center_x': 0.5}
+                background_normal: ''
+                background_color: 0.2, 0.6, 1, 1
+                on_press: root.go_to_level_selection(self)
+                canvas.before:
+                    Color:
+                        rgba: 0.1, 0.4, 0.8, 1
+                    Rectangle:
+                        pos: self.pos
+                        size: self.width, self.height/2
+                
+                # Content without duplicate text
+                Label:
+                    text: 'Play Game'
+                    font_size: '26sp'
+                    bold: True
+                    center: self.parent.center
+            
+            # Select Skin button with icon
+            Button:
+                size_hint: 0.6, None
+                height: dp(50)
+                pos_hint: {'center_x': 0.5}
+                background_normal: ''
+                background_color: 0.8, 0.4, 0.9, 1
+                on_press: root.go_to_skin_selector(self)
+                
+                # Fixed boxlayout to avoid duplication
+                BoxLayout:
+                    pos: self.parent.pos
+                    size: self.parent.size
+                    padding: [dp(20), 0]
+                    
+                    Label:
+                        text: 'Select Skin'
+                        font_size: '22sp'
+                        color: 1, 1, 1, 1
+                        size_hint_x: 0.8
+                        halign: 'left'
+                        text_size: self.size
+                        valign: 'center'
+                    
+                    Label:
+                        text: '🎨'
+                        font_size: '24sp'
+                        size_hint_x: 0.2
+
+            # Unlock All Levels button with icon
+            Button:
+                size_hint: 0.6, None
+                height: dp(50)
+                pos_hint: {'center_x': 0.5}
+                background_normal: ''
+                background_color: 0.2, 0.8, 0.4, 1
+                on_press: root.unlock_all_levels(self)
+                
+                # Fixed boxlayout to avoid duplication
+                BoxLayout:
+                    pos: self.parent.pos
+                    size: self.parent.size
+                    padding: [dp(20), 0]
+                    
+                    Label:
+                        text: 'Unlock All Levels'
+                        font_size: '22sp'
+                        color: 1, 1, 1, 1
+                        size_hint_x: 0.8
+                        halign: 'left'
+                        text_size: self.size
+                        valign: 'center'
+                    
+                    Label:
+                        text: '🔓'
+                        font_size: '24sp'
+                        size_hint_x: 0.2
+            
+            # Exit button with red color
+            Button:
+                size_hint: 0.5, None
+                height: dp(50)
+                pos_hint: {'center_x': 0.5}
+                background_normal: ''
+                background_color: 0.8, 0.2, 0.2, 1
+                on_press: app.stop()
+                
+                # Content without duplicate text
+                Label:
+                    text: 'Exit'
+                    font_size: '22sp'
+                    center: self.parent.center
+                
+            # Footer with credits
+            Label:
+                text: 'Created by: Thnutham and Sakthnat'
+                font_size: '14sp'
+                color: 0.9, 0.9, 0.9, 0.7
+                size_hint_y: None
+                height: dp(30)
+                pos_hint: {'center_x': 0.5}
+
+    # Animated logo in the corner
+    Image:
+        id: logo
+        source: 'assets/image/cube_1.png'
+        size_hint: None, None
+        size: dp(80), dp(80)
+        pos_hint: {'right': 0.98, 'top': 0.98}
+        opacity: 0
+        canvas.before:
+            PushMatrix
+            Rotate:
+                angle: self.angle if hasattr(self, 'angle') else 0
+                axis: 0, 0, 1
+                origin: self.center
+        canvas.after:
+            PopMatrix

@@ -1,290 +1,195 @@
 <SkinSelectorScreen>:
+    canvas.before:
+        Rectangle:
+            pos: self.pos
+            size: self.size
+            source: 'assets/image/background.png'
+        
+        # Add gradient overlay for better readability
+        Color:
+            rgba: 0, 0, 0, 0.4
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
     BoxLayout:
         orientation: 'vertical'
-        padding: 10
-        spacing: 10
+        padding: dp(20)
+        spacing: dp(15)
 
-        # Title Label
-        Label:
-            text: "Select Your Skin"
-            font_size: '24sp'
-            size_hint_y: None
-            height: 50
-            
-        # Preview of selected skin
+        # Header section
         BoxLayout:
             orientation: 'vertical'
             size_hint_y: 0.2
+            padding: [0, dp(10)]
             
+            # Title with shadow effect
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint_y: 0.7
+                
+                # Shadow layer
+                Label:
+                    text: "Customize Your Cube"
+                    font_size: '36sp'
+                    bold: True
+                    color: 0, 0, 0, 0.5
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                    pos_hint: {'center_x': 0.501, 'center_y': 0.499}
+                
+                # Main title
+                Label:
+                    text: "Customize Your Cube"
+                    font_size: '36sp'
+                    bold: True
+                    color: 1, 0.8, 0.2, 1
+                    size_hint_y: None
+                    height: self.texture_size[1]
+                    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+            
+            # Subtitle
+            Label:
+                text: "Choose your favorite look"
+                font_size: '18sp'
+                italic: True
+                size_hint_y: 0.3
+                color: 0.9, 0.9, 0.9, 0.8
+        
+        # Preview section with fancy border
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 0.3
+            padding: [dp(50), dp(10)]
+            
+            # Current selection label
             Label:
                 text: "Current Selection"
-                font_size: '18sp'
-                size_hint_y: None
-                height: 30
-                
-            Image:
-                id: skin_preview
-                source: root.selected_skin
-                size_hint: None, None
-                size: 100, 100
-                pos_hint: {'center_x': 0.5}
-                allow_stretch: True
-                keep_ratio: True
-
-        # ScrollView for GridLayout to enable scrolling
-        ScrollView:
-            size_hint_y: 0.6
-            do_scroll_x: False  # Only vertical scrolling
-            do_scroll_y: True
-            bar_width: 10
-            bar_color: [0.7, 0.7, 0.7, 0.9]  # Light gray scroll bar
-            bar_inactive_color: [0.7, 0.7, 0.7, 0.2]  # Transparent when not scrolling
-            effect_cls: "ScrollEffect"  # Simple scroll effect
-            scroll_type: ['bars', 'content']  # Allow both bar and content scrolling
+                font_size: '22sp'
+                bold: True
+                size_hint_y: 0.3
+                color: 0.9, 0.9, 1, 1
             
-            # GridLayout for skin buttons
-            GridLayout:
-                cols: 7
-                spacing: 10
-                size_hint_y: None
-                height: self.minimum_height  # Important for scrolling
-                row_default_height: 160  # Slightly larger than button size for spacing
-                col_default_width: 160
+            # Preview area with animated background
+            RelativeLayout:
+                size_hint_y: 0.7
                 
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_1.png'
-                    on_release: root.select_skin('assets/image/cube_1.png')
-                    Image:
-                        source: 'assets/image/cube_1.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_2.png'
-                    on_release: root.select_skin('assets/image/cube_2.png')
-                    Image:
-                        source: 'assets/image/cube_2.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_3.png'
-                    on_release: root.select_skin('assets/image/cube_3.png')
-                    Image:
-                        source: 'assets/image/cube_3.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_4.png'
-                    on_release: root.select_skin('assets/image/cube_4.png')
-                    Image:
-                        source: 'assets/image/cube_4.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_5.png'
-                    on_release: root.select_skin('assets/image/cube_5.png')
-                    Image:
-                        source: 'assets/image/cube_5.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_6.png'
-                    on_release: root.select_skin('assets/image/cube_6.png')
-                    Image:
-                        source: 'assets/image/cube_6.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_7.png'
-                    on_release: root.select_skin('assets/image/cube_7.png')
-                    Image:
-                        source: 'assets/image/cube_7.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_8.png'
-                    on_release: root.select_skin('assets/image/cube_8.png')
-                    Image:
-                        source: 'assets/image/cube_8.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_9.png'
-                    on_release: root.select_skin('assets/image/cube_9.png')
-                    Image:
-                        source: 'assets/image/cube_9.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_10.png'
-                    on_release: root.select_skin('assets/image/cube_10.png')
-                    Image:
-                        source: 'assets/image/cube_10.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_11.png'
-                    on_release: root.select_skin('assets/image/cube_11.png')
-                    Image:
-                        source: 'assets/image/cube_11.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_12.png'
-                    on_release: root.select_skin('assets/image/cube_12.png')
-                    Image:
-                        source: 'assets/image/cube_12.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_13.png'
-                    on_release: root.select_skin('assets/image/cube_13.png')
-                    Image:
-                        source: 'assets/image/cube_13.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_14.png'
-                    on_release: root.select_skin('assets/image/cube_14.png')
-                    Image:
-                        source: 'assets/image/cube_14.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
+                # Animated background for preview
+                canvas.before:
+                    Color:
+                        rgba: 0.2, 0.2, 0.4, 0.7
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+                        
+                    # Border
+                    Color:
+                        rgba: 0.5, 0.5, 1, 0.8
+                    Line:
+                        rounded_rectangle: [self.x, self.y, self.width, self.height, 15]
+                        width: 2
                 
-                Button:
+                # Preview image with glow effect
+                Image:
+                    id: skin_preview
+                    source: root.selected_skin
                     size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_15.png'
-                    on_release: root.select_skin('assets/image/cube_15.png')
-                    Image:
-                        source: 'assets/image/cube_15.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-                
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_16.png'
-                    on_release: root.select_skin('assets/image/cube_16.png')
-                    Image:
-                        source: 'assets/image/cube_16.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-                
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_17.png'
-                    on_release: root.select_skin('assets/image/cube_17.png')
-                    Image:
-                        source: 'assets/image/cube_17.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-                
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_18.png'
-                    on_release: root.select_skin('assets/image/cube_18.png')
-                    Image:
-                        source: 'assets/image/cube_18.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-                
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_19.png'
-                    on_release: root.select_skin('assets/image/cube_19.png')
-                    Image:
-                        source: 'assets/image/cube_19.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-                
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_20.png'
-                    on_release: root.select_skin('assets/image/cube_20.png')
-                    Image:
-                        source: 'assets/image/cube_20.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
+                    size: min(dp(150), self.parent.width * 0.4), min(dp(150), self.parent.width * 0.4)
+                    pos_hint: {'center_x': 0.5, 'center_y': 0.5}
+                    allow_stretch: True
+                    keep_ratio: True
+                    
+                    # Glow effect
+                    canvas.before:
+                        Color:
+                            rgba: 0.9, 0.9, 1, 0.3
+                        RoundedRectangle:
+                            pos: [self.x - dp(5), self.y - dp(5)]
+                            size: [self.width + dp(10), self.height + dp(10)]
+                            radius: [dp(10)]
+                    
+                    # Rotation animation
+                    canvas.before:
+                        PushMatrix
+                        Rotate:
+                            angle: self.angle if hasattr(self, 'angle') else 0
+                            axis: 0, 0, 1
+                            origin: self.center
+                    canvas.after:
+                        PopMatrix
 
-                Button:
-                    size_hint: None, None
-                    size: 150, 150
-                    background_normal: 'assets/image/cube_21.png'
-                    on_release: root.select_skin('assets/image/cube_20.png')
-                    Image:
-                        source: 'assets/image/cube_21.png'
-                        size: 150, 150
-                        allow_stretch: True
-                        keep_ratio: True
-
-        # Back Button
-        Button:
-            text: "Back"
-            size_hint_y: None
-            height: 50
-            on_release: app.root.current = 'home'
+        # Skin grid with better layout
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 0.4
+            
+            # Section title with underline
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint_y: 0.2
+                padding: [0, dp(5)]
+                
+                Label:
+                    text: "Available Skins"
+                    font_size: '20sp'
+                    bold: True
+                    color: 0.95, 0.95, 1, 1
+                    size_hint_y: 0.7
+                
+                # Decorative line below section title
+                Widget:
+                    size_hint_y: 0.3
+                    canvas:
+                        Color:
+                            rgba: 0.7, 0.7, 1, 0.8
+                        Line:
+                            points: [self.x + self.width * 0.25, self.y + self.height * 0.5, self.x + self.width * 0.75, self.y + self.height * 0.5]
+                            width: dp(2)
+            
+            # ScrollView for GridLayout
+            ScrollView:
+                size_hint_y: 0.8
+                do_scroll_x: False
+                do_scroll_y: True
+                bar_width: dp(10)
+                bar_color: [0.7, 0.7, 1, 0.9]  # Light purple scroll bar
+                bar_inactive_color: [0.7, 0.7, 1, 0.2]
+                effect_cls: "ScrollEffect"
+                scroll_type: ['bars', 'content']
+                
+                # GridLayout for skin buttons with responsive columns
+                GridLayout:
+                    id: skin_grid
+                    cols: max(3, min(7, int(root.width / dp(160))))
+                    spacing: dp(12)
+                    padding: dp(10)
+                    size_hint_y: None
+                    height: self.minimum_height
+                    row_default_height: dp(160)
+                    col_default_width: dp(160)
+                    
+                    # Dynamic skin buttons will be generated in Python
+                    
+        # Bottom navigation
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: 0.1
+            spacing: dp(20)
+            padding: [dp(50), dp(5)]
+            
+            Button:
+                text: "Back to Menu"
+                font_size: dp(18)
+                size_hint: (0.8, 0.8)
+                pos_hint: {'center_y': 0.5}
+                background_normal: ''
+                background_color: (0.4, 0.4, 0.8, 1)
+                on_release: app.root.current = 'home'
+                
+                canvas.before:
+                    Color:
+                        rgba: 0.3, 0.3, 0.6, 1
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: [self.size[0], self.size[1]/2]
+                        radius: [dp(5), dp(5), 0, 0]
