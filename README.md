@@ -1463,7 +1463,6 @@ def __init__(self, pos, speed_multiplier=1.5, **kwargs):
 
 ```
 
-GitHub Copilot
 สรุปการทำงานของคลาสต่างๆ ใน game_logic.py
 คลาส Player
 คลาส Player เป็นตัวละครหลักที่ผู้เล่นควบคุม มีกลไกการเคลื่อนไหวและการตรวจสอบการชนกัน
