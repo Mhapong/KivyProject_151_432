@@ -1,22 +1,65 @@
 <StageSelectionScreen>:
+    canvas.before:
+        Rectangle:
+            pos: self.pos
+            size: self.size
+            source: 'assets/image/background.png'  # Add a background image
+    
     BoxLayout:
         orientation: 'vertical'
-        spacing: 20
-        padding: 50
+        spacing: dp(20)
+        padding: dp(30)
 
-        Label:
-            text: 'Select Stage'
-            font_size: '36sp'
-            size_hint: (1, 0.2)
-
+        # Title area - approximately 15% of screen height
         BoxLayout:
             orientation: 'vertical'
-            id: level_buttons
-            size_hint: (1, 0.6)
-            spacing: 10
-
-        Button:
-            text: 'Back to Menu'
-            size_hint: (0.3, 0.1)
-            pos_hint: {'center_x': 0.5}
-            on_press: root.go_back()
+            size_hint_y: 0.15
+            
+            Label:
+                text: 'Select Stage'
+                font_size: min(self.width / 10, dp(36))  # Responsive font size
+                size_hint: (1, 0.8)
+                color: 1, 1, 1, 1
+                
+            # Subtitle for additional info (optional)
+            Label:
+                text: 'Complete levels to unlock more'
+                font_size: min(self.width / 20, dp(18))
+                size_hint: (1, 0.2)
+                color: 1, 1, 1, 0.7
+        
+        # Main content - level buttons in ScrollView
+        ScrollView:
+            size_hint_y: 0.7  # Take 70% of available space
+            do_scroll_x: False
+            do_scroll_y: True
+            bar_width: dp(10)
+            bar_color: [0.7, 0.7, 0.7, 0.9]  # Light gray scroll bar
+            bar_inactive_color: [0.7, 0.7, 0.7, 0.2]  # Transparent when not scrolling
+            effect_cls: "ScrollEffect"  # Simple scroll effect
+            scroll_type: ['bars', 'content']  # Allow both bar and content scrolling
+            
+            # GridLayout for level buttons - will adjust based on width
+            GridLayout:
+                id: level_buttons
+                cols: max(1, min(3, int(root.width / dp(300))))  # Responsive columns
+                spacing: dp(15)
+                size_hint_y: None
+                height: self.minimum_height
+                padding: dp(10)
+                
+        # Bottom navigation area - approximately 15% of screen height
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: 0.15
+            spacing: dp(20)
+            padding: [dp(50), 0]
+            
+            Button:
+                text: 'Back to Menu'
+                size_hint: (0.8, 0.6)
+                pos_hint: {'center_y': 0.5}
+                font_size: min(self.width / 10, dp(24))  # Responsive font
+                on_press: root.go_back()
+                background_normal: ''
+                background_color: (0.4, 0.4, 0.8, 1)
