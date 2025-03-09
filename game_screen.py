@@ -114,7 +114,7 @@ class GameScreen(Screen):
             key = None
 
         # Check both keycode number and key name for space
-        if code == 32 or key == 'spacebar' or key == 'space':
+        if key in (32, 'space', 'spacebar'):
             print("Space key detected!")
             if self.player and hasattr(self.player, 'on_ground'):
                 print(f"Player on_ground: {self.player.on_ground}")
