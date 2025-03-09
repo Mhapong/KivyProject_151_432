@@ -1,7 +1,7 @@
 {
   "name": "Level 5 - Double Trouble",
   "finish_x": 7000,
-  "background": "assets/image/map_2.jpg",
+  "background": "assets/image/map_5.png",
   "difficulty": "Medium",
   "platforms": [
     { "pos": [0, 100], "size": [800, 30] },

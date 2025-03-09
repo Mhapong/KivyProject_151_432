@@ -1,7 +1,7 @@
 {
   "name": "Level 2 - Just The Beginning",
   "finish_x": 4000,
-  "background": "assets/image/map_1.jpg",
+  "background": "assets/image/map_3.jpg",
   "difficulty": "Easy",
   "platforms": [
     { "pos": [0, 100], "size": [600, 30] },

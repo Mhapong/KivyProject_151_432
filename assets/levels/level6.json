@@ -1,7 +1,7 @@
 {
   "name": "Level 6 - Almost There",
   "finish_x": 8000,
-  "background": "assets/image/map_3.jpg",
+  "background": "assets/image/map_6.png",
   "difficulty": "Medium",
   "platforms": [
     { "pos": [0, 100], "size": [800, 30] },

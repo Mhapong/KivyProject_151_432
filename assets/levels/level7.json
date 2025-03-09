@@ -1,7 +1,7 @@
 {
   "name": "Level 7 - Final Challenge",
   "finish_x": 8000,
-  "background": "assets/image/map_3.jpg",
+  "background": "assets/image/map_7.png",
   "difficulty": "Medium",
   "platforms": [
     { "pos": [0, 100], "size": [800, 30] },

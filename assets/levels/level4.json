@@ -1,7 +1,7 @@
 {
   "name": "Level 4 - Getting Trickier",
   "finish_x": 6000,
-  "background": "assets/image/map_3.jpg",
+  "background": "assets/image/map_4.png",
   "difficulty": "Medium",
   "platforms": [
     { "pos": [0, 100], "size": [800, 30] },
@@ -39,8 +39,7 @@
     { "type": "boost_pad", "x": 1820, "y": 280 },
     { "type": "spike", "x": 1940, "y": 230 },
     { "type": "boost_pad", "x": 2195, "y": 180 },
-    { "type": "spike", "x": 2365, "y": 230 },
-    { "type": "boost_pad", "x": 2535, "y": 280 },
+    { "type": "boost_pad", "x": 2550, "y": 280 },
     { "type": "spike", "x": 2810, "y": 330 },
     { "type": "boost_pad", "x": 2950, "y": 280 },
     { "type": "spike", "x": 3230, "y": 230 },

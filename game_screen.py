@@ -51,9 +51,6 @@ class GameScreen(Screen):
     
     # Rest of your methods remain unchanged
     def update(self, dt):
-        # Update player's world position
-        self.player.world_x += self.player.moving_speed * dt
-        
         # Move objects
         for platform in self.platforms[:]:  # Use slice to avoid modification during iteration
             platform.x -= self.player.moving_speed * dt
@@ -63,7 +60,6 @@ class GameScreen(Screen):
         
         # Move obstacles with custom positioning
         for obstacle in self.obstacles[:]:
-            # Calculate new x position based on initial relative position and moving speed
             obstacle.x -= self.player.moving_speed * dt
             
             # Remove obstacles that move off-screen
@@ -89,9 +85,14 @@ class GameScreen(Screen):
             old_x = finish_line.x
             finish_line.x -= self.player.moving_speed * dt
             
-            # Additional debugging for level 3
+            # Additional debugging for level 3 - FIXED VERSION
             if "level3.json" in self.level_file and len(self.finish_lines) > 0:
-                if self.game_loop.frames % 60 == 0:  # Print every ~1 second (assuming 60fps)
+                # Use a counter attribute instead of frames
+                if not hasattr(self, 'frame_counter'):
+                    self.frame_counter = 0
+                self.frame_counter += 1
+                
+                if self.frame_counter % 60 == 0:  # Print every ~1 second (assuming 60fps)
                     print(f"Level 3 finish line at x={finish_line.x}, player at x={self.player.x}")
             
             # Debug when finish line is approaching
@@ -103,8 +104,8 @@ class GameScreen(Screen):
                 print("FINISH LINE REACHED!")
                 self.level_complete()
                 return
-
-        # Rest of your update logic remains the same
+                
+        # Rest of your update logic
         on_platform = self.check_platform_collisions()
         if not on_platform:
             self.player.on_ground = False
